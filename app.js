@@ -4,8 +4,8 @@ const CONFIG = {
   lon: 35.2137,
   hebcalGeonameId: 281184,   // Jerusalem
   // Candle lighting and havdalah are now calculated from sunset — see loadShabbatTimes()
-  newsRssUrl: 'https://www.c14.co.il/feed/',
-  newsRssFallback: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
+  newsPanelUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',  // side panel with images
+  newsTickerUrl: 'https://www.c14.co.il/feed/',                       // bottom ticker
   imageRotateMs: 30_000,
   weatherRefreshMs: 10 * 60_000,
   newsRefreshMs:    15 * 60_000,
@@ -205,20 +205,25 @@ async function loadShabbatTimes() {
 
 // ── News panel + ticker ────────────────────────────────────────────────────────
 async function loadNews() {
-  let items = [];
+  await Promise.all([loadNewsPanel(), loadNewsTicker()]);
+}
 
-  for (const url of [CONFIG.newsRssUrl, CONFIG.newsRssFallback]) {
-    try {
-      items = await fetchRSS(url);
-      if (items.length) break;
-    } catch { /* try next */ }
-  }
-
-  if (items.length) {
-    renderNewsPanel(items);
-    renderTicker(items);
-  } else {
+async function loadNewsPanel() {
+  try {
+    const items = await fetchRSS(CONFIG.newsPanelUrl);
+    if (items.length) renderNewsPanel(items);
+    else throw new Error('empty');
+  } catch {
     document.getElementById('news-list').innerHTML = '<div class="loading" style="padding:16px">החדשות אינן זמינות</div>';
+  }
+}
+
+async function loadNewsTicker() {
+  try {
+    const items = await fetchRSS(CONFIG.newsTickerUrl);
+    if (items.length) renderTicker(items);
+    else throw new Error('empty');
+  } catch {
     document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
   }
 }
