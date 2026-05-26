@@ -4,8 +4,8 @@ const CONFIG = {
   lon: 35.2137,
   hebcalGeonameId: 281184,   // Jerusalem
   candleLightingMins: 40,    // Jerusalem uses 40 minutes
-  newsRssUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
-  newsRssFallback: 'https://he.timesofisrael.com/feed/',
+  newsRssUrl: 'https://www.c14.co.il/feed/',
+  newsRssFallback: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
   imageRotateMs: 30_000,
   weatherRefreshMs: 10 * 60_000,
   newsRefreshMs:    15 * 60_000,
