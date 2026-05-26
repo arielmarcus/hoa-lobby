@@ -190,15 +190,10 @@ async function loadShabbatTimes() {
 async function loadNews() {
   let items = [];
 
-  // Try primary, fall back to secondary
   for (const url of [CONFIG.newsRssUrl, CONFIG.newsRssFallback]) {
     try {
-      const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=15`;
-      const data = await fetchJSON(api);
-      if (data.status === 'ok' && data.items?.length) {
-        items = data.items;
-        break;
-      }
+      items = await fetchRSS(url);
+      if (items.length) break;
     } catch { /* try next */ }
   }
 
@@ -206,9 +201,26 @@ async function loadNews() {
     renderNewsPanel(items);
     renderTicker(items);
   } else {
-    document.getElementById('news-list').innerHTML = '<div class="loading">החדשות אינן זמינות</div>';
+    document.getElementById('news-list').innerHTML = '<div class="loading" style="padding:16px">החדשות אינן זמינות</div>';
     document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
   }
+}
+
+async function fetchRSS(url) {
+  // Use AllOrigins as a CORS proxy, then parse the XML ourselves
+  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  const res = await fetch(proxy);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  const xml = new DOMParser().parseFromString(text, 'text/xml');
+  if (xml.querySelector('parsererror')) throw new Error('XML parse error');
+  return Array.from(xml.querySelectorAll('item'))
+    .slice(0, 15)
+    .map(el => ({
+      title:  el.querySelector('title')?.textContent?.trim() ?? '',
+      author: el.querySelector('author, dc\\:creator')?.textContent?.trim() ?? '',
+    }))
+    .filter(i => i.title);
 }
 
 function renderNewsPanel(items) {
