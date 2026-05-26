@@ -8,15 +8,24 @@ A static digital signage web app for the lobby TV at קרן היסוד 5 (Jerusa
 
 ## Deploying changes
 
-Every `git push` to `main` deploys automatically via GitHub Pages. The lobby screen auto-reloads every 30 minutes, or immediately on page refresh.
+Every `git push` to `main` deploys automatically via GitHub Pages (~2 min). The lobby screen auto-reloads every 30 minutes, or immediately on manual refresh.
 
 ```bash
 git add <files> && git commit -m "..." && git push
 ```
 
+## Local preview
+
+A preview server config exists at `~/.claude/launch.json`. Start it with `/preview` in Claude Code, or manually:
+
+```bash
+python3 -m http.server 8765 --directory /Users/marcus/hoa-lobby
+# then open http://localhost:8765/index.html
+```
+
 ## Updating announcements
 
-Use the `/lobby-announce` project command (interactive), or edit `announcements.json` directly and push. Up to 3 announcements are shown; format:
+Use the `/lobby-announce` project command (interactive), or edit `announcements.json` directly and push. Up to 3 shown; format:
 ```json
 [{ "text": "...", "date": "..." }]
 ```
@@ -25,7 +34,7 @@ Use the `/lobby-announce` project command (interactive), or edit `announcements.
 
 Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all logic).
 
-**Layout** — fixed 1920×1080 canvas, CSS-transformed to fit any screen via `scaleToFit()` in `app.js`. Three-column RTL grid inside a header + main + footer layout:
+**Layout** — fixed 1920×1080 canvas scaled to fit any screen via `scaleToFit()` in `app.js`. Uses `position: fixed; transform-origin: top left` with explicit `left`/`top` offset calculation — do not revert to the flex-centering approach, which clips the right sidebar on Android TV. Three-column RTL grid inside a header + main + footer:
 - Right sidebar: Shabbat times + building announcements panels
 - Center: rotating background images
 - Left: slow-scrolling Ynet news panel with thumbnails
@@ -51,4 +60,8 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 
 ## Background images
 
-Place photos in `images/{season}/` or `images/holidays/`. The `IMAGES` array at the top of `app.js` must be updated manually to reference them (currently uses `picsum.photos` placeholders).
+Current photos live in `images/` (flat, not in season subfolders). The `IMAGES` array at the top of `app.js` must be updated to reference them. **Filenames must not contain spaces or parentheses** — Android TV's browser fails to load URLs with spaces even when quoted in CSS.
+
+## Background music
+
+11 ambient/instrumental MP3s live in `Music/`. `startMusic()` in `app.js` shuffles and auto-advances them at `volume = 0.35`. If Android TV's autoplay policy blocks audio, playback starts on first user interaction. To add tracks: drop MP3s into `Music/` and add their paths to the `MUSIC_TRACKS` array at the top of `app.js`. No spaces in filenames.
