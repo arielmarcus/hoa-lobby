@@ -19,13 +19,13 @@
 }
 
 html, body {
-  width: 1920px;
-  height: 1080px;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Heebo', 'Arial', sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #app {
@@ -33,6 +33,12 @@ html, body {
   grid-template-rows: var(--header-h) 1fr var(--ticker-h);
   width: 1920px;
   height: 1080px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Heebo', 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transform-origin: center center;
+  flex-shrink: 0;
 }
 
 /* ── Header ── */
