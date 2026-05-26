@@ -3,7 +3,7 @@ const CONFIG = {
   lat: 31.7683,
   lon: 35.2137,
   hebcalGeonameId: 281184,   // Jerusalem
-  candleLightingMins: 40,    // Jerusalem uses 40 minutes
+  candleLightingMins: 36,    // 36 matches Israeli Rabbinate published times for Jerusalem
   newsRssUrl: 'https://www.c14.co.il/feed/',
   newsRssFallback: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
   imageRotateMs: 30_000,
