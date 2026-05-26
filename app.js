@@ -29,11 +29,10 @@ const CONFIG = {
 
 // Background images — replace paths with your own photos, e.g. 'images/spring/lobby.jpg'
 const IMAGES = [
-  'https://picsum.photos/seed/jlm1/1920/1080',
-  'https://picsum.photos/seed/jlm2/1920/1080',
-  'https://picsum.photos/seed/jlm3/1920/1080',
-  'https://picsum.photos/seed/jlm4/1920/1080',
-  'https://picsum.photos/seed/jlm5/1920/1080',
+  'images/WhatsApp Image 2026-05-27 at 00.46.35.jpeg',
+  'images/WhatsApp Image 2026-05-27 at 00.46.04.jpeg',
+  'images/WhatsApp Image 2026-05-27 at 00.46.04 (1).jpeg',
+  'images/WhatsApp Image 2026-05-27 at 00.46.04 (2).jpeg',
 ];
 
 // ── Hebrew strings ─────────────────────────────────────────────────────────────
