@@ -446,7 +446,12 @@ function escapeHtml(str = '') {
 // ── Scale to fit any screen ────────────────────────────────────────────────────
 function scaleToFit() {
   const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-  document.getElementById('app').style.transform = `scale(${scale})`;
+  const offsetX = (window.innerWidth  - 1920 * scale) / 2;
+  const offsetY = (window.innerHeight - 1080 * scale) / 2;
+  const app = document.getElementById('app');
+  app.style.transform = `scale(${scale})`;
+  app.style.left = offsetX + 'px';
+  app.style.top  = offsetY + 'px';
 }
 scaleToFit();
 window.addEventListener('resize', scaleToFit);
