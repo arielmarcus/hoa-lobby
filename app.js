@@ -241,9 +241,14 @@ function extractImgFromHtml(html) {
 
 async function loadNewsTicker() {
   try {
-    const items = await fetchRSS(CONFIG.newsTickerUrl);
-    if (items.length) renderTicker(items);
-    else throw new Error('empty');
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsTickerUrl)}`;
+    const data = await fetchJSON(url);
+    if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
+    const items = data.items.map(i => ({
+      title:   i.title?.trim() ?? '',
+      pubDate: i.pubDate ?? '',
+    })).filter(i => i.title);
+    renderTicker(items);
   } catch {
     document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
   }
@@ -296,7 +301,8 @@ function formatPubTime(pubDateStr) {
 
 function renderNewsPanel(items) {
   const list = document.getElementById('news-list');
-  list.innerHTML = items.slice(0, 10).map(item => `
+
+  const itemsHtml = items.slice(0, 10).map(item => `
     <div class="news-item">
       ${item.image
         ? `<img class="news-thumb" src="${escapeHtml(item.image)}" onerror="this.style.display='none'" loading="lazy">`
@@ -308,6 +314,16 @@ function renderNewsPanel(items) {
       </div>
     </div>
   `).join('');
+
+  // Duplicate for seamless infinite scroll
+  const scroller = document.createElement('div');
+  scroller.className = 'news-scroller';
+  scroller.innerHTML = itemsHtml + itemsHtml;
+  list.innerHTML = '';
+  list.appendChild(scroller);
+
+  // ~7 seconds per item — slow enough to read comfortably
+  scroller.style.animationDuration = `${items.slice(0, 10).length * 7}s`;
 }
 
 function renderTicker(items) {
