@@ -207,7 +207,6 @@ async function loadNews() {
 }
 
 async function fetchRSS(url) {
-  // Use AllOrigins as a CORS proxy, then parse the XML ourselves
   const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
   const res = await fetch(proxy);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -217,42 +216,67 @@ async function fetchRSS(url) {
   return Array.from(xml.querySelectorAll('item'))
     .slice(0, 15)
     .map(el => ({
-      title:  el.querySelector('title')?.textContent?.trim() ?? '',
-      author: el.querySelector('author, dc\\:creator')?.textContent?.trim() ?? '',
+      title:   el.querySelector('title')?.textContent?.trim() ?? '',
+      pubDate: el.querySelector('pubDate')?.textContent?.trim() ?? '',
+      image:   extractRSSImage(el),
     }))
     .filter(i => i.title);
 }
 
+function extractRSSImage(el) {
+  // media:content (most common)
+  const mediaContent = el.getElementsByTagName('media:content')[0];
+  if (mediaContent?.getAttribute('url')) return mediaContent.getAttribute('url');
+
+  // enclosure tag
+  const enclosure = el.querySelector('enclosure');
+  if (enclosure) {
+    const url  = enclosure.getAttribute('url') ?? '';
+    const type = enclosure.getAttribute('type') ?? '';
+    if (url && (type.startsWith('image') || /\.(jpe?g|png|webp|gif)/i.test(url))) return url;
+  }
+
+  // img tag inside description
+  const desc = el.querySelector('description')?.textContent ?? '';
+  const m = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (m) return m[1];
+
+  return null;
+}
+
+function formatPubTime(pubDateStr) {
+  if (!pubDateStr) return '';
+  const d = new Date(pubDateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
 function renderNewsPanel(items) {
   const list = document.getElementById('news-list');
-
-  // Build items HTML — duplicate for seamless loop
-  const itemsHtml = items.map(item => `
+  list.innerHTML = items.slice(0, 10).map(item => `
     <div class="news-item">
-      <div class="news-headline">${escapeHtml(item.title)}</div>
-      <div class="news-source">${escapeHtml(item.author || '')}</div>
+      ${item.image
+        ? `<img class="news-thumb" src="${escapeHtml(item.image)}" onerror="this.style.display='none'" loading="lazy">`
+        : '<div class="news-thumb-placeholder"></div>'
+      }
+      <div class="news-text">
+        <div class="news-headline">${escapeHtml(item.title)}</div>
+        ${item.pubDate ? `<div class="news-time">${formatPubTime(item.pubDate)}</div>` : ''}
+      </div>
     </div>
   `).join('');
-
-  const scroller = document.createElement('div');
-  scroller.className = 'news-scroller';
-  // Duplicate content for seamless infinite scroll
-  scroller.innerHTML = itemsHtml + itemsHtml;
-  list.innerHTML = '';
-  list.appendChild(scroller);
-
-  // Set animation duration based on item count (~4s per item)
-  const duration = items.length * 4;
-  scroller.style.animationDuration = `${duration}s`;
 }
 
 function renderTicker(items) {
   const el = document.getElementById('ticker-content');
-  const text = items.map(i => i.title).join('     •     ');
-  el.textContent = text;
-  const charWidth = 11;
-  const totalPx = text.length * charWidth + 1920;
-  el.style.animationDuration = `${totalPx / 120}s`;
+  const parts = items.map(i => {
+    const t = formatPubTime(i.pubDate);
+    return `${t ? `<span class="tick-time">${t}</span> ` : ''}${escapeHtml(i.title)}`;
+  });
+  el.innerHTML = parts.join('&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;');
+
+  const approxChars = items.reduce((n, i) => n + i.title.length + 12, 0);
+  el.style.animationDuration = `${Math.max(40, approxChars * 0.09)}s`;
 }
 
 // ── Announcements ─────────────────────────────────────────────────────────────

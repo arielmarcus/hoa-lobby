@@ -327,39 +327,57 @@ html, body {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 90px;
+  height: 60px;
   background: linear-gradient(to top, var(--panel-bg) 0%, transparent 100%);
   pointer-events: none;
   border-radius: 0 0 12px 12px;
 }
 
-.news-scroller {
-  animation: news-scroll-up linear infinite;
-}
-
-@keyframes news-scroll-up {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
-}
-
 .news-item {
-  padding: 13px 0;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid rgba(0,0,0,0.07);
+  align-items: flex-start;
 }
 
 .news-item:last-child { border-bottom: none; }
 
+.news-thumb {
+  width: 82px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #ddd;
+}
+
+.news-thumb-placeholder {
+  width: 82px;
+  height: 58px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #e0ddd8, #ccc);
+}
+
+.news-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .news-headline {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--text);
 }
 
-.news-source {
+.news-time {
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: 3px;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Ticker ── */
@@ -406,4 +424,10 @@ html, body {
 @keyframes ticker-scroll {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-100%); }
+}
+
+.tick-time {
+  color: var(--gold-light);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
