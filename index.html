@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Lobby Display</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <header id="header">
+      <div id="building-name"></div>
+      <div id="header-right">
+        <div id="hebrew-date"></div>
+        <div id="clock"></div>
+      </div>
+    </header>
+
+    <main id="main">
+      <div id="image-panel">
+        <div id="bg-image"></div>
+        <div id="image-overlay"></div>
+      </div>
+
+      <aside id="sidebar">
+        <div class="panel" id="weather-panel">
+          <div class="panel-title">Weather · Jerusalem</div>
+          <div id="weather-content"><span class="loading">Loading…</span></div>
+        </div>
+
+        <div class="panel" id="shabbat-panel">
+          <div class="panel-title">Shabbat Times</div>
+          <div id="shabbat-content"><span class="loading">Loading…</span></div>
+        </div>
+
+        <div class="panel" id="announcements-panel">
+          <div class="panel-title">Announcements</div>
+          <div id="announcements-content"><span class="loading">Loading…</span></div>
+        </div>
+      </aside>
+    </main>
+
+    <footer id="ticker-bar">
+      <div id="ticker-label">NEWS</div>
+      <div id="ticker-wrapper">
+        <div id="ticker-content"></div>
+      </div>
+    </footer>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

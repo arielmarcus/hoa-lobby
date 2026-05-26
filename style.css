@@ -1,0 +1,297 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --gold: #f0c040;
+  --gold-dim: rgba(240, 192, 64, 0.6);
+  --bg: #080810;
+  --panel-bg: rgba(255, 255, 255, 0.05);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --text: #f0f0f0;
+  --text-muted: #888;
+  --sidebar-w: 500px;
+  --header-h: 88px;
+  --ticker-h: 64px;
+}
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr var(--ticker-h);
+  width: 1920px;
+  height: 1080px;
+}
+
+/* ── Header ── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(8, 8, 16, 0.75);
+  border-bottom: 1px solid var(--gold-dim);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+}
+
+#building-name {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+#header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+#clock {
+  font-size: 52px;
+  font-weight: 200;
+  letter-spacing: 4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+#hebrew-date {
+  font-size: 15px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  direction: rtl;
+}
+
+/* ── Main ── */
+#main {
+  display: grid;
+  grid-template-columns: 1fr var(--sidebar-w);
+  overflow: hidden;
+}
+
+/* ── Image panel ── */
+#image-panel {
+  position: relative;
+  overflow: hidden;
+  background: #111;
+}
+
+#bg-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+}
+
+#bg-image.visible {
+  opacity: 1;
+}
+
+#image-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, transparent 55%, rgba(8, 8, 16, 0.9) 100%),
+    linear-gradient(to top, rgba(8, 8, 16, 0.4) 0%, transparent 25%);
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 18px 0;
+  background: rgba(8, 8, 16, 0.8);
+  overflow: hidden;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--gold-dim);
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.loading {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* ── Weather ── */
+#weather-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex: 1;
+}
+
+.weather-icon {
+  font-size: 54px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.weather-temp {
+  font-size: 58px;
+  font-weight: 200;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-desc {
+  font-size: 16px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
+.weather-meta {
+  font-size: 13px;
+  color: #666;
+  margin-top: 5px;
+}
+
+/* ── Shabbat ── */
+#shabbat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.shabbat-parasha {
+  font-size: 14px;
+  color: var(--gold);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.shabbat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shabbat-label {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.shabbat-time {
+  font-size: 26px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+}
+
+.shabbat-row.active .shabbat-time {
+  color: var(--gold);
+}
+
+/* ── Announcements ── */
+#announcements-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.announcement {
+  font-size: 15px;
+  line-height: 1.55;
+  color: #ddd;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.announcement:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.announcement-date {
+  font-size: 11px;
+  color: #555;
+  margin-top: 3px;
+}
+
+.no-announcements {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* ── News ticker ── */
+#ticker-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(8, 8, 16, 0.85);
+  border-top: 1px solid var(--gold-dim);
+  overflow: hidden;
+}
+
+#ticker-label {
+  background: var(--gold);
+  color: #000;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 0 22px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#ticker-wrapper {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+#ticker-content {
+  white-space: nowrap;
+  font-size: 19px;
+  color: #e0e0e0;
+  padding-left: 100vw;
+  animation: ticker-scroll linear infinite;
+  will-change: transform;
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
