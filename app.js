@@ -3,7 +3,7 @@ const CONFIG = {
   lat: 31.7683,
   lon: 35.2137,
   hebcalGeonameId: 281184,   // Jerusalem
-  candleLightingMins: 36,    // 36 matches Israeli Rabbinate published times for Jerusalem
+  // Candle lighting and havdalah are now calculated from sunset — see loadShabbatTimes()
   newsRssUrl: 'https://www.c14.co.il/feed/',
   newsRssFallback: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
   imageRotateMs: 30_000,
@@ -128,28 +128,45 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// ── Shabbat times ─────────────────────────────────────────────────────────────
+// ── Shabbat times (Israeli Rabbinate: sunset−36 / sunset+42) ─────────────────
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
-    const url = `https://www.hebcal.com/shabbat?cfg=json&geonameid=${CONFIG.hebcalGeonameId}&m=${CONFIG.candleLightingMins}&leyning=off`;
-    const data = await fetchJSON(url);
+    const now = new Date();
+    const dow = now.getDay(); // 0=Sun … 5=Fri, 6=Sat
+    const isShabbat     = dow === 6;
+    const isErevShabbat = dow === 5;
 
-    const candles  = data.items.find(i => i.category === 'candles');
-    const havdalah = data.items.find(i => i.category === 'havdalah');
-    const parasha  = data.items.find(i => i.category === 'parashat');
-    const holiday  = data.items.find(i => i.category === 'holiday' && i.yomtov);
+    // Find the relevant Friday and Saturday dates
+    const friday = new Date(now);
+    if (dow === 6) {
+      friday.setDate(now.getDate() - 1);         // yesterday
+    } else {
+      const daysAhead = (5 - dow + 7) % 7 || 7;
+      friday.setDate(now.getDate() + daysAhead);
+    }
+    const saturday = new Date(friday);
+    saturday.setDate(friday.getDate() + 1);
 
-    const dayOfWeek = new Date().getDay(); // 5 = Fri, 6 = Sat
-    const isShabbat = dayOfWeek === 6;
-    const isErevShabbat = dayOfWeek === 5;
+    const isoDate = d => d.toISOString().split('T')[0];
+    const base    = `https://www.hebcal.com/zmanim?cfg=json&geonameid=${CONFIG.hebcalGeonameId}`;
 
-    const fmt = iso => new Date(iso).toLocaleTimeString('he-IL', {
-      hour: '2-digit', minute: '2-digit', hour12: false,
-    });
+    // Fetch sunset for Friday + Saturday and parasha in parallel
+    const [friZ, satZ, shabbatData] = await Promise.all([
+      fetchJSON(`${base}&date=${isoDate(friday)}`),
+      fetchJSON(`${base}&date=${isoDate(saturday)}`),
+      fetchJSON(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${CONFIG.hebcalGeonameId}&leyning=off`),
+    ]);
 
-    // Prefer Hebrew name, fall back to English title
-    const title = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    // Israeli Rabbinate offsets
+    const candleTime  = new Date(new Date(friZ.times.sunset).getTime()  - 36 * 60_000);
+    const havdalahTime = new Date(new Date(satZ.times.sunset).getTime() + 42 * 60_000);
+
+    const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const parasha = shabbatData.items.find(i => i.category === 'parashat');
+    const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
+    const title   = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
 
     if (isShabbat) {
       el.innerHTML = `
@@ -157,7 +174,7 @@ async function loadShabbatTimes() {
         ${title ? `<div class="shabbat-parasha">${escapeHtml(title)}</div>` : ''}
         <div class="shabbat-row active">
           <span class="shabbat-label">✨ הבדלה</span>
-          <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
+          <span class="shabbat-time">${fmt(havdalahTime)}</span>
         </div>
       `;
     } else {
@@ -165,11 +182,11 @@ async function loadShabbatTimes() {
         ${title ? `<div class="shabbat-parasha">${escapeHtml(title)}</div>` : ''}
         <div class="shabbat-row ${isErevShabbat ? 'active' : ''}">
           <span class="shabbat-label">🕯️ הדלקת נרות</span>
-          <span class="shabbat-time">${candles ? fmt(candles.date) : '—'}</span>
+          <span class="shabbat-time">${fmt(candleTime)}</span>
         </div>
         <div class="shabbat-row">
           <span class="shabbat-label">✨ הבדלה</span>
-          <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
+          <span class="shabbat-time">${fmt(havdalahTime)}</span>
         </div>
       `;
     }
