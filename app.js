@@ -148,19 +148,26 @@ async function loadShabbatTimes() {
     const saturday = new Date(friday);
     saturday.setDate(friday.getDate() + 1);
 
-    const isoDate = d => d.toISOString().split('T')[0];
-    const base    = `https://www.hebcal.com/zmanim?cfg=json&geonameid=${CONFIG.hebcalGeonameId}`;
+    // Use local date parts to avoid UTC midnight rollover issues
+    const localDate = d =>
+      `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const zmanimBase = `https://www.hebcal.com/zmanim?cfg=json&latitude=${CONFIG.lat}&longitude=${CONFIG.lon}&tzid=Asia%2FJerusalem`;
 
     // Fetch sunset for Friday + Saturday and parasha in parallel
     const [friZ, satZ, shabbatData] = await Promise.all([
-      fetchJSON(`${base}&date=${isoDate(friday)}`),
-      fetchJSON(`${base}&date=${isoDate(saturday)}`),
+      fetchJSON(`${zmanimBase}&date=${localDate(friday)}`),
+      fetchJSON(`${zmanimBase}&date=${localDate(saturday)}`),
       fetchJSON(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${CONFIG.hebcalGeonameId}&leyning=off`),
     ]);
 
+    const friSunset = friZ?.times?.sunset;
+    const satSunset = satZ?.times?.sunset;
+    if (!friSunset || !satSunset) throw new Error('Missing sunset times from Zmanim API');
+
     // Israeli Rabbinate offsets
-    const candleTime  = new Date(new Date(friZ.times.sunset).getTime()  - 36 * 60_000);
-    const havdalahTime = new Date(new Date(satZ.times.sunset).getTime() + 42 * 60_000);
+    const candleTime   = new Date(new Date(friSunset).getTime() - 36 * 60_000);
+    const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
 
