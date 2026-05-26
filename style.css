@@ -5,17 +5,20 @@
 }
 
 :root {
-  --gold: #f0c040;
-  --gold-dim: rgba(240, 192, 64, 0.5);
-  --bg: #080812;
-  --panel-bg: rgba(255, 255, 255, 0.05);
-  --panel-border: rgba(255, 255, 255, 0.09);
-  --text: #f0f0f0;
-  --text-muted: #888;
-  --sidebar-w: 460px;
-  --news-w: 370px;
-  --header-h: 90px;
-  --ticker-h: 62px;
+  --gold:        #c89a18;
+  --gold-light:  #f0c030;
+  --blue:        #0f2358;
+  --blue-mid:    #1a3a7a;
+  --blue-light:  #e8eef8;
+  --bg:          #e8e4dc;
+  --panel-bg:    #ffffff;
+  --panel-border: rgba(0, 0, 0, 0.08);
+  --text:        #1a1a2e;
+  --text-muted:  #777;
+  --sidebar-w:   460px;
+  --news-w:      380px;
+  --header-h:    90px;
+  --ticker-h:    64px;
 }
 
 html, body {
@@ -39,6 +42,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
   transform-origin: center center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 /* ── Header ── */
@@ -46,49 +50,47 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
-  background: rgba(8, 8, 18, 0.85);
-  border-bottom: 1px solid var(--gold-dim);
-  backdrop-filter: blur(16px);
+  padding: 0 44px;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--blue-mid) 100%);
+  border-bottom: 3px solid var(--gold);
   gap: 24px;
 }
 
-/* start = right side in RTL (clock + dates) */
 #header-start {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
   flex-shrink: 0;
 }
 
 #clock {
-  font-size: 54px;
+  font-size: 52px;
   font-weight: 300;
   letter-spacing: 3px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  direction: ltr; /* keep clock digits LTR */
+  color: #fff;
+  direction: ltr;
 }
 
 #dates {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 #gregorian-date {
-  font-size: 16px;
-  color: var(--text-muted);
+  font-size: 17px;
+  color: rgba(255,255,255,0.75);
   font-weight: 400;
 }
 
 #hebrew-date {
   font-size: 15px;
-  color: var(--gold-dim);
-  font-weight: 400;
+  color: var(--gold-light);
+  font-weight: 500;
 }
 
-/* Building name — center */
 #building-name {
   flex: 1;
   text-align: center;
@@ -96,65 +98,65 @@ html, body {
 }
 
 #welcome-text {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 300;
-  color: rgba(240, 192, 64, 0.65);
+  color: rgba(255,255,255,0.65);
   letter-spacing: 1px;
 }
 
 #building-title {
-  font-size: 38px;
-  font-weight: 700;
+  font-size: 40px;
+  font-weight: 800;
   letter-spacing: 2px;
-  color: var(--gold);
+  color: #fff;
 }
 
-/* end = left side in RTL (weather) */
 #header-end {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   flex-shrink: 0;
-  gap: 2px;
+  gap: 4px;
 }
 
 #weather-mini {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   direction: ltr;
 }
 
 #weather-icon-mini {
-  font-size: 34px;
+  font-size: 36px;
   line-height: 1;
 }
 
 #weather-temp-mini {
-  font-size: 42px;
+  font-size: 44px;
   font-weight: 200;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  color: #fff;
 }
 
 #weather-desc-mini {
   font-size: 14px;
-  color: var(--text-muted);
-  padding-right: 4px;
+  color: rgba(255,255,255,0.65);
 }
 
-/* ── Main layout (3 columns, RTL order: sidebar | image | news) ── */
+/* ── Main layout ── */
 #main {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr var(--news-w);
   overflow: hidden;
+  gap: 0;
 }
 
-/* ── Image panel (center) ── */
+/* ── Image panel ── */
 #image-panel {
   position: relative;
   overflow: hidden;
-  background: #0d0d18;
+  background: #c8c4bc;
 }
 
 #bg-image {
@@ -166,38 +168,36 @@ html, body {
   transition: opacity 1.5s ease-in-out;
 }
 
-#bg-image.visible {
-  opacity: 1;
-}
+#bg-image.visible { opacity: 1; }
 
 #image-overlay {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to left,  transparent 50%, rgba(8, 8, 18, 0.85) 100%),
-    linear-gradient(to right, transparent 50%, rgba(8, 8, 18, 0.85) 100%),
-    linear-gradient(to top,   rgba(8, 8, 18, 0.35) 0%, transparent 20%);
+    linear-gradient(to left,  transparent 55%, rgba(232, 228, 220, 0.92) 100%),
+    linear-gradient(to right, transparent 55%, rgba(232, 228, 220, 0.92) 100%);
 }
 
-/* ── Sidebar (right column) ── */
+/* ── Sidebar (right) ── */
 #sidebar {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 16px 16px 0;
-  background: rgba(8, 8, 18, 0.75);
+  gap: 12px;
+  padding: 14px 14px 14px 0;
+  background: var(--bg);
   overflow: hidden;
 }
 
 .panel {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 18px 22px;
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .panel-title {
@@ -205,134 +205,132 @@ html, body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 3px;
-  color: var(--gold-dim);
+  color: var(--gold);
   margin-bottom: 14px;
   flex-shrink: 0;
+  border-bottom: 1px solid rgba(200,154,24,0.2);
+  padding-bottom: 10px;
 }
 
-.loading {
-  color: var(--text-muted);
-  font-size: 15px;
-}
+.loading { color: var(--text-muted); font-size: 15px; }
 
 /* ── Shabbat panel ── */
 #shabbat-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   justify-content: center;
 }
 
 .shabbat-parasha {
-  font-size: 17px;
-  color: var(--gold);
-  font-weight: 600;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--panel-border);
-  padding-bottom: 10px;
+  font-size: 19px;
+  color: var(--blue);
+  font-weight: 700;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
 
 .shabbat-holiday {
-  font-size: 20px;
-  color: var(--gold);
-  font-weight: 700;
+  font-size: 22px;
+  color: var(--blue);
+  font-weight: 800;
   text-align: center;
-  margin-bottom: 6px;
 }
 
 .shabbat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
+.shabbat-row:last-child { border-bottom: none; }
+
 .shabbat-label {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .shabbat-time {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
   direction: ltr;
-  letter-spacing: 1px;
+  color: var(--text);
 }
 
-.shabbat-row.active .shabbat-label { color: var(--text); }
-.shabbat-row.active .shabbat-time  { color: var(--gold); }
+.shabbat-row.active .shabbat-label { color: var(--blue); font-weight: 700; }
+.shabbat-row.active .shabbat-time  { color: var(--gold); font-weight: 600; }
 
 .shabbat-shalom {
   text-align: center;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--gold);
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--blue);
   letter-spacing: 2px;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 /* ── Announcements panel ── */
 #announcements-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   overflow: hidden;
 }
 
 .announcement {
   font-size: 16px;
-  line-height: 1.6;
-  color: #ddd;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  line-height: 1.65;
+  color: var(--text);
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
 
-.announcement:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
+.announcement:last-child { border-bottom: none; padding-bottom: 0; }
 
 .announcement-date {
   font-size: 12px;
-  color: #555;
+  color: var(--text-muted);
   margin-top: 3px;
 }
 
-.no-announcements {
-  color: var(--text-muted);
-  font-size: 15px;
-}
+.no-announcements { color: var(--text-muted); font-size: 15px; }
 
-/* ── News panel (left column) ── */
+/* ── News panel (left) ── */
 #news-panel {
-  background: rgba(8, 8, 18, 0.8);
-  padding: 16px 0 16px 16px;
+  background: var(--bg);
+  padding: 14px 0 14px 14px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-#news-panel .panel-title {
-  padding-right: 4px;
-}
+#news-panel .panel-title { padding-right: 6px; }
 
 #news-list {
   flex: 1;
   overflow: hidden;
   position: relative;
+  background: var(--panel-bg);
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 8px 16px;
 }
 
 #news-list::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(to top, rgba(8, 8, 18, 0.9) 0%, transparent 100%);
+  bottom: 0; left: 0; right: 0;
+  height: 90px;
+  background: linear-gradient(to top, var(--panel-bg) 0%, transparent 100%);
   pointer-events: none;
+  border-radius: 0 0 12px 12px;
 }
 
 .news-scroller {
@@ -345,25 +343,22 @@ html, body {
 }
 
 .news-item {
-  padding: 12px 4px 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  cursor: default;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
 
-.news-item:last-child {
-  border-bottom: none;
-}
+.news-item:last-child { border-bottom: none; }
 
 .news-headline {
-  font-size: 15px;
-  font-weight: 400;
+  font-size: 16px;
+  font-weight: 500;
   line-height: 1.55;
-  color: #e0e0e0;
+  color: var(--text);
 }
 
 .news-source {
   font-size: 11px;
-  color: #555;
+  color: var(--text-muted);
   margin-top: 3px;
 }
 
@@ -371,15 +366,15 @@ html, body {
 #ticker-bar {
   display: flex;
   align-items: center;
-  background: rgba(8, 8, 18, 0.9);
-  border-top: 1px solid var(--gold-dim);
+  background: var(--blue);
+  border-top: 2px solid var(--gold);
   overflow: hidden;
-  direction: ltr; /* keep ticker LTR for animation */
+  direction: ltr;
 }
 
 #ticker-label {
-  background: var(--gold);
-  color: #000;
+  background: var(--gold-light);
+  color: var(--blue);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 3px;
@@ -388,7 +383,6 @@ html, body {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  font-family: 'Heebo', sans-serif;
 }
 
 #ticker-wrapper {
@@ -401,12 +395,11 @@ html, body {
 
 #ticker-content {
   white-space: nowrap;
-  font-size: 18px;
-  color: #e8e8e8;
+  font-size: 19px;
+  color: #fff;
   padding-left: 100vw;
   animation: ticker-scroll linear infinite;
   will-change: transform;
-  font-family: 'Heebo', sans-serif;
   direction: rtl;
 }
 

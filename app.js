@@ -148,20 +148,21 @@ async function loadShabbatTimes() {
       hour: '2-digit', minute: '2-digit', hour12: false,
     });
 
-    const title = holiday?.title ?? parasha?.title ?? '';
+    // Prefer Hebrew name, fall back to English title
+    const title = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
 
     if (isShabbat) {
       el.innerHTML = `
         <div class="shabbat-shalom">שבת שלום ✨</div>
-        ${title ? `<div class="shabbat-parasha">${title}</div>` : ''}
+        ${title ? `<div class="shabbat-parasha">${escapeHtml(title)}</div>` : ''}
         <div class="shabbat-row active">
-          <span class="shabbat-label">הבדלה</span>
+          <span class="shabbat-label">✨ הבדלה</span>
           <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
         </div>
       `;
     } else {
       el.innerHTML = `
-        ${title ? `<div class="shabbat-parasha">${title}</div>` : ''}
+        ${title ? `<div class="shabbat-parasha">${escapeHtml(title)}</div>` : ''}
         <div class="shabbat-row ${isErevShabbat ? 'active' : ''}">
           <span class="shabbat-label">🕯️ הדלקת נרות</span>
           <span class="shabbat-time">${candles ? fmt(candles.date) : '—'}</span>
