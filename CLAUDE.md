@@ -16,10 +16,8 @@ git add <files> && git commit -m "..." && git push
 
 ## Local preview
 
-A preview server config exists at `~/.claude/launch.json`. Start it with `/preview` in Claude Code, or manually:
-
 ```bash
-python3 -m http.server 8765 --directory /Users/marcus/hoa-lobby
+python3 -m http.server 8765 --directory /home/user/hoa-lobby
 # then open http://localhost:8765/index.html
 ```
 
@@ -56,12 +54,32 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 
 **Ticker speed** — duration = `Math.max(80, approxChars * 0.18)` seconds. Adjust the `0.18` multiplier to change speed.
 
-**CORS** — both RSS feeds go through `api.rss2json.com` (AllOrigins fails for Ynet). Direct fetch also fails due to CORS from GitHub Pages HTTPS origin.
+**CORS** — both RSS feeds go through `api.rss2json.com` (AllOrigins fails for Ynet). Direct fetch also fails due to CORS from GitHub Pages HTTPS origin. There is a `fetchRSS()` function using AllOrigins that is not currently called — it's a dead fallback; do not use it for Ynet.
+
+## Android TV / Fully Kiosk Browser compatibility
+
+The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-based WebView. Known constraints:
+
+- **No CSS `inset` shorthand** — use explicit `top: 0; right: 0; bottom: 0; left: 0` instead. Using `inset` will silently collapse absolutely-positioned elements to 0×0.
+- **No spaces or parentheses in asset filenames** — the browser fails to load URLs with spaces even when URL-encoded in CSS/JS.
+- **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
 
 ## Background images
 
-Current photos live in `images/` (flat, not in season subfolders). The `IMAGES` array at the top of `app.js` must be updated to reference them. **Filenames must not contain spaces or parentheses** — Android TV's browser fails to load URLs with spaces even when quoted in CSS.
+Photos live in `images/` (flat directory). The `IMAGES` array at the top of `app.js` must list their paths. Rotation interval is `CONFIG.imageRotateMs` (currently 30 s).
 
 ## Background music
 
-11 ambient/instrumental MP3s live in `Music/`. `startMusic()` in `app.js` shuffles and auto-advances them at `volume = 0.35`. If Android TV's autoplay policy blocks audio, playback starts on first user interaction. To add tracks: drop MP3s into `Music/` and add their paths to the `MUSIC_TRACKS` array at the top of `app.js`. No spaces in filenames.
+11 ambient/instrumental MP3s live in `Music/`. `startMusic()` in `app.js` shuffles and auto-advances them at `volume = 0.35`. To add tracks: drop MP3s into `Music/` and add their paths to the `MUSIC_TRACKS` array at the top of `app.js`.
+
+## Key tuning knobs (all in `app.js`)
+
+| Constant / expression | What it controls |
+|-----------------------|-----------------|
+| `CONFIG.imageRotateMs` | Seconds between photo transitions |
+| `CONFIG.weatherRefreshMs` | Weather API poll interval |
+| `CONFIG.newsRefreshMs` | News API poll interval |
+| `CONFIG.pageReloadMs` | Full page reload interval |
+| `itemCount * 7` in `renderNewsPanel` | News scroll speed (seconds per item) |
+| `approxChars * 0.18` in `renderTicker` | Ticker scroll speed multiplier |
+| `audio.volume = 0.35` in `startMusic` | Music volume |
