@@ -53,6 +53,7 @@ const WMO = {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  setupAudio();
   startClock();
   updateGregorianDate();
   loadHebrewDate();
@@ -390,6 +391,41 @@ function escapeHtml(str = '') {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+function setupAudio() {
+  const audio  = document.getElementById('lobby-audio');
+  const btn    = document.getElementById('audio-toggle');
+  const tap    = document.getElementById('tap-to-start');
+
+  audio.volume = 0.35;
+
+  function startAudio() {
+    audio.play().then(() => {
+      tap.style.display = 'none';
+    }).catch(() => {
+      tap.style.display = 'flex';
+    });
+  }
+
+  function updateBtn() {
+    btn.textContent = audio.muted ? '🔇' : '🔊';
+  }
+
+  // Tap anywhere starts music and hides the prompt
+  document.addEventListener('click', () => {
+    audio.play();
+    tap.style.display = 'none';
+  }, { once: true });
+
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    audio.muted = !audio.muted;
+    updateBtn();
+  });
+
+  startAudio();
 }
 
 // ── Scale to fit any screen ────────────────────────────────────────────────────
