@@ -160,7 +160,7 @@ html, body {
 
 #bg-image {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background-size: cover;
   background-position: center;
   opacity: 0;
@@ -171,7 +171,7 @@ html, body {
 
 #image-overlay {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background:
     linear-gradient(to left,  transparent 55%, rgba(232, 228, 220, 0.92) 100%),
     linear-gradient(to right, transparent 55%, rgba(232, 228, 220, 0.92) 100%);
@@ -200,7 +200,7 @@ html, body {
 }
 
 .panel-title {
-  font-size: 22px;
+  font-size: 34px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 3px;
