@@ -217,12 +217,26 @@ async function loadNews() {
 
 async function loadNewsPanel() {
   try {
-    const items = await fetchRSS(CONFIG.newsPanelUrl);
-    if (items.length) renderNewsPanel(items);
-    else throw new Error('empty');
+    // rss2json works reliably with Ynet and preserves description HTML (for images)
+    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsPanelUrl)}`;
+    const data = await fetchJSON(url);
+    if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
+
+    const items = data.items.map(i => ({
+      title:   i.title?.trim() ?? '',
+      pubDate: i.pubDate ?? '',
+      image:   i.thumbnail || extractImgFromHtml(i.description ?? ''),
+    })).filter(i => i.title);
+
+    renderNewsPanel(items);
   } catch {
     document.getElementById('news-list').innerHTML = '<div class="loading" style="padding:16px">החדשות אינן זמינות</div>';
   }
+}
+
+function extractImgFromHtml(html) {
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1] : null;
 }
 
 async function loadNewsTicker() {
