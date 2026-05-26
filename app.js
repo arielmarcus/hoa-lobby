@@ -1,3 +1,18 @@
+// ── Music tracks ──────────────────────────────────────────────────────────────
+const MUSIC_TRACKS = [
+  'Music/atlasaudio-ambient-astronomy-511860.mp3',
+  'Music/atlasaudio-ambient-cinematic-510518.mp3',
+  'Music/clavier-music-inspiring-cinematic-ambient-255033.mp3',
+  'Music/freemusicforvideo-ambient-piano-524039.mp3',
+  'Music/leberch-calm-ambient-354930.mp3',
+  'Music/litesaturation-ambient-piano-music-no-copyright-540618.mp3',
+  'Music/morgan-ambient-calm-ambient-dreamscape-529861.mp3',
+  'Music/quietphase-calm-ambient-491577.mp3',
+  'Music/ribhavagrawal-the-realization-ambient-piano-230860.mp3',
+  'Music/tunetank-ambient-piano-relaxing-music-347950.mp3',
+  'Music/tunetank-cinematic-ambient-348342.mp3',
+];
+
 // ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {
   lat: 31.7683,
@@ -65,6 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(loadWeather, CONFIG.weatherRefreshMs);
   setInterval(loadNews,    CONFIG.newsRefreshMs);
   setTimeout(() => location.reload(), CONFIG.pageReloadMs);
+
+  startMusic();
 });
 
 // ── Clock ─────────────────────────────────────────────────────────────────────
@@ -375,6 +392,40 @@ function startImageRotation() {
   first.src = IMAGES[0];
 
   setInterval(showNext, CONFIG.imageRotateMs);
+}
+
+// ── Background music ──────────────────────────────────────────────────────────
+function startMusic() {
+  if (!MUSIC_TRACKS.length) return;
+
+  const audio = new Audio();
+  audio.volume = 0.35;
+
+  // Shuffle a copy of the track list
+  const queue = [...MUSIC_TRACKS].sort(() => Math.random() - 0.5);
+  let idx = 0;
+
+  function playNext() {
+    audio.src = queue[idx];
+    audio.play().catch(() => {});
+    idx = (idx + 1) % queue.length;
+    // Reshuffle when we cycle through all tracks
+    if (idx === 0) queue.sort(() => Math.random() - 0.5);
+  }
+
+  audio.addEventListener('ended', playNext);
+
+  // Try immediately; if blocked by autoplay policy, retry on first interaction
+  audio.src = queue[idx++];
+  audio.play().catch(() => {
+    const resume = () => {
+      audio.play().catch(() => {});
+      document.removeEventListener('click', resume);
+      document.removeEventListener('keydown', resume);
+    };
+    document.addEventListener('click', resume);
+    document.addEventListener('keydown', resume);
+  });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
