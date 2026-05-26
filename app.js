@@ -1,21 +1,18 @@
-// ── Configuration ────────────────────────────────────────────────────────────
-// Edit these values to match your building
+// ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {
-  buildingName: 'Your Building Name',   // Change this
   lat: 31.7683,
   lon: 35.2137,
-  hebcalGeonameId: 281184,              // Jerusalem
-  candleLightingMins: 40,               // Jerusalem uses 40 minutes
-  newsRssUrl: 'https://www.timesofisrael.com/feed/',
-  imageRotateMs: 30_000,   // 30 seconds between image changes
+  hebcalGeonameId: 281184,   // Jerusalem
+  candleLightingMins: 40,    // Jerusalem uses 40 minutes
+  newsRssUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',
+  newsRssFallback: 'https://he.timesofisrael.com/feed/',
+  imageRotateMs: 30_000,
   weatherRefreshMs: 10 * 60_000,
-  newsRefreshMs: 15 * 60_000,
-  pageReloadMs: 30 * 60_000,
+  newsRefreshMs:    15 * 60_000,
+  pageReloadMs:     30 * 60_000,
 };
 
-// Default background images (placeholder photos from picsum.photos).
-// To use your own: drop files into the images/ subfolders and list their
-// paths here, e.g. 'images/spring/lobby.jpg'
+// Background images — replace paths with your own photos, e.g. 'images/spring/lobby.jpg'
 const IMAGES = [
   'https://picsum.photos/seed/jlm1/1920/1080',
   'https://picsum.photos/seed/jlm2/1920/1080',
@@ -24,36 +21,40 @@ const IMAGES = [
   'https://picsum.photos/seed/jlm5/1920/1080',
 ];
 
-// ── WMO weather code map ──────────────────────────────────────────────────────
+// ── Hebrew strings ─────────────────────────────────────────────────────────────
+const HE_DAYS   = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+const HE_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+                   'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+
+// ── WMO weather codes ──────────────────────────────────────────────────────────
 const WMO = {
-  0:  { label: 'Clear sky',       icon: '☀️' },
-  1:  { label: 'Mainly clear',    icon: '🌤️' },
-  2:  { label: 'Partly cloudy',   icon: '⛅' },
-  3:  { label: 'Overcast',        icon: '☁️' },
-  45: { label: 'Foggy',           icon: '🌫️' },
-  48: { label: 'Icy fog',         icon: '🌫️' },
-  51: { label: 'Light drizzle',   icon: '🌦️' },
-  53: { label: 'Drizzle',         icon: '🌦️' },
-  55: { label: 'Heavy drizzle',   icon: '🌦️' },
-  61: { label: 'Light rain',      icon: '🌧️' },
-  63: { label: 'Rain',            icon: '🌧️' },
-  65: { label: 'Heavy rain',      icon: '🌧️' },
-  71: { label: 'Light snow',      icon: '🌨️' },
-  73: { label: 'Snow',            icon: '🌨️' },
-  75: { label: 'Heavy snow',      icon: '❄️' },
-  80: { label: 'Showers',         icon: '🌦️' },
-  81: { label: 'Showers',         icon: '🌦️' },
-  82: { label: 'Heavy showers',   icon: '⛈️' },
-  95: { label: 'Thunderstorm',    icon: '⛈️' },
-  96: { label: 'Thunderstorm',    icon: '⛈️' },
-  99: { label: 'Thunderstorm',    icon: '⛈️' },
+  0:  { label: 'בהיר', icon: '☀️' },
+  1:  { label: 'בהיר חלקית', icon: '🌤️' },
+  2:  { label: 'מעונן חלקית', icon: '⛅' },
+  3:  { label: 'מעונן', icon: '☁️' },
+  45: { label: 'ערפל', icon: '🌫️' },
+  48: { label: 'ערפל', icon: '🌫️' },
+  51: { label: 'טפטוף קל', icon: '🌦️' },
+  53: { label: 'טפטוף', icon: '🌦️' },
+  55: { label: 'טפטוף כבד', icon: '🌦️' },
+  61: { label: 'גשם קל', icon: '🌧️' },
+  63: { label: 'גשם', icon: '🌧️' },
+  65: { label: 'גשם כבד', icon: '🌧️' },
+  71: { label: 'שלג קל', icon: '🌨️' },
+  73: { label: 'שלג', icon: '🌨️' },
+  75: { label: 'שלג כבד', icon: '❄️' },
+  80: { label: 'מקלחות', icon: '🌦️' },
+  81: { label: 'מקלחות', icon: '🌦️' },
+  82: { label: 'מקלחות כבדות', icon: '⛈️' },
+  95: { label: 'סופת רעמים', icon: '⛈️' },
+  96: { label: 'סופת רעמים', icon: '⛈️' },
+  99: { label: 'סופת רעמים', icon: '⛈️' },
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('building-name').textContent = CONFIG.buildingName;
-
   startClock();
+  updateGregorianDate();
   loadHebrewDate();
   loadWeather();
   loadShabbatTimes();
@@ -62,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startImageRotation();
 
   setInterval(loadWeather, CONFIG.weatherRefreshMs);
-  setInterval(loadNews, CONFIG.newsRefreshMs);
+  setInterval(loadNews,    CONFIG.newsRefreshMs);
   setTimeout(() => location.reload(), CONFIG.pageReloadMs);
 });
 
@@ -80,17 +81,31 @@ function startClock() {
   setInterval(tick, 1000);
 }
 
-// ── Hebrew date ───────────────────────────────────────────────────────────────
+// ── Gregorian date in Hebrew ──────────────────────────────────────────────────
+function updateGregorianDate() {
+  const now = new Date();
+  const dayName   = HE_DAYS[now.getDay()];
+  const dayNum    = now.getDate();
+  const monthName = HE_MONTHS[now.getMonth()];
+  document.getElementById('gregorian-date').textContent =
+    `יום ${dayName}, ${dayNum} ${monthName}`;
+
+  // Refresh at midnight
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 30, 0);
+  setTimeout(updateGregorianDate, tomorrow - now);
+}
+
+// ── Hebrew date from HebCal ───────────────────────────────────────────────────
 async function loadHebrewDate() {
   const now = new Date();
   try {
     const url = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth() + 1}&gd=${now.getDate()}&g2h=1`;
     const data = await fetchJSON(url);
-    document.getElementById('hebrew-date').textContent = data.hebrew || '';
-  } catch {
-    // silent — clock is still showing
-  }
-  // Schedule reload at next midnight
+    document.getElementById('hebrew-date').textContent = data.hebrew ?? '';
+  } catch { /* silent */ }
+
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 1, 0, 0);
@@ -99,25 +114,18 @@ async function loadHebrewDate() {
 
 // ── Weather ───────────────────────────────────────────────────────────────────
 async function loadWeather() {
-  const el = document.getElementById('weather-content');
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}` +
       `&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m&timezone=auto`;
     const data = await fetchJSON(url);
-    const c = data.current;
-    const wmo = WMO[c.weathercode] ?? { label: 'Unknown', icon: '🌡️' };
+    const c   = data.current;
+    const wmo = WMO[c.weathercode] ?? { label: '', icon: '🌡️' };
 
-    el.innerHTML = `
-      <div class="weather-icon">${wmo.icon}</div>
-      <div>
-        <div class="weather-temp">${Math.round(c.temperature_2m)}°</div>
-        <div class="weather-desc">${wmo.label}</div>
-        <div class="weather-meta">Feels ${Math.round(c.apparent_temperature)}° · Wind ${Math.round(c.windspeed_10m)} km/h</div>
-      </div>
-    `;
-  } catch {
-    el.innerHTML = '<span class="loading">Weather unavailable</span>';
-  }
+    document.getElementById('weather-icon-mini').textContent = wmo.icon;
+    document.getElementById('weather-temp-mini').textContent = `${Math.round(c.temperature_2m)}°`;
+    document.getElementById('weather-desc-mini').textContent =
+      `${wmo.label} · מרגיש ${Math.round(c.apparent_temperature)}°`;
+  } catch { /* leave previous value */ }
 }
 
 // ── Shabbat times ─────────────────────────────────────────────────────────────
@@ -132,57 +140,106 @@ async function loadShabbatTimes() {
     const parasha  = data.items.find(i => i.category === 'parashat');
     const holiday  = data.items.find(i => i.category === 'holiday' && i.yomtov);
 
-    const title = holiday?.title ?? parasha?.title ?? '';
-    const dayOfWeek = new Date().getDay(); // 5=Fri, 6=Sat
+    const dayOfWeek = new Date().getDay(); // 5 = Fri, 6 = Sat
+    const isShabbat = dayOfWeek === 6;
+    const isErevShabbat = dayOfWeek === 5;
 
     const fmt = iso => new Date(iso).toLocaleTimeString('he-IL', {
       hour: '2-digit', minute: '2-digit', hour12: false,
     });
 
-    el.innerHTML = `
-      ${title ? `<div class="shabbat-parasha">${title}</div>` : ''}
-      <div class="shabbat-row ${dayOfWeek === 5 ? 'active' : ''}">
-        <span class="shabbat-label">🕯️ Candle lighting</span>
-        <span class="shabbat-time">${candles ? fmt(candles.date) : '—'}</span>
-      </div>
-      <div class="shabbat-row ${dayOfWeek === 6 ? 'active' : ''}">
-        <span class="shabbat-label">✨ Havdalah</span>
-        <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
-      </div>
-    `;
+    const title = holiday?.title ?? parasha?.title ?? '';
+
+    if (isShabbat) {
+      el.innerHTML = `
+        <div class="shabbat-shalom">שבת שלום ✨</div>
+        ${title ? `<div class="shabbat-parasha">${title}</div>` : ''}
+        <div class="shabbat-row active">
+          <span class="shabbat-label">הבדלה</span>
+          <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
+        </div>
+      `;
+    } else {
+      el.innerHTML = `
+        ${title ? `<div class="shabbat-parasha">${title}</div>` : ''}
+        <div class="shabbat-row ${isErevShabbat ? 'active' : ''}">
+          <span class="shabbat-label">🕯️ הדלקת נרות</span>
+          <span class="shabbat-time">${candles ? fmt(candles.date) : '—'}</span>
+        </div>
+        <div class="shabbat-row">
+          <span class="shabbat-label">✨ הבדלה</span>
+          <span class="shabbat-time">${havdalah ? fmt(havdalah.date) : '—'}</span>
+        </div>
+      `;
+    }
   } catch {
-    el.innerHTML = '<span class="loading">Times unavailable</span>';
+    el.innerHTML = '<span class="loading">הזמנים אינם זמינים</span>';
   }
 
-  // Refresh next Sunday at midnight so we always show the coming Shabbat
+  // Refresh next Sunday
   const now = new Date();
   const daysUntilSun = (7 - now.getDay()) % 7 || 7;
-  const nextSunday = new Date(now);
-  nextSunday.setDate(now.getDate() + daysUntilSun);
-  nextSunday.setHours(0, 5, 0, 0);
-  setTimeout(loadShabbatTimes, nextSunday - now);
+  const next = new Date(now);
+  next.setDate(now.getDate() + daysUntilSun);
+  next.setHours(0, 5, 0, 0);
+  setTimeout(loadShabbatTimes, next - now);
 }
 
-// ── News ticker ───────────────────────────────────────────────────────────────
+// ── News panel + ticker ────────────────────────────────────────────────────────
 async function loadNews() {
-  const el = document.getElementById('ticker-content');
-  try {
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsRssUrl)}&count=12`;
-    const data = await fetchJSON(apiUrl);
-    if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
+  let items = [];
 
-    const text = data.items.map(i => i.title).join('     •     ');
-    el.textContent = text;
-
-    // Adjust speed to content length: ~120px/s
-    const charWidth = 11; // approx px per char at 19px font
-    const totalPx = text.length * charWidth + window.innerWidth;
-    const duration = totalPx / 120;
-    el.style.animationDuration = `${duration}s`;
-  } catch {
-    el.textContent = 'News temporarily unavailable';
-    el.style.animationDuration = '20s';
+  // Try primary, fall back to secondary
+  for (const url of [CONFIG.newsRssUrl, CONFIG.newsRssFallback]) {
+    try {
+      const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&count=15`;
+      const data = await fetchJSON(api);
+      if (data.status === 'ok' && data.items?.length) {
+        items = data.items;
+        break;
+      }
+    } catch { /* try next */ }
   }
+
+  if (items.length) {
+    renderNewsPanel(items);
+    renderTicker(items);
+  } else {
+    document.getElementById('news-list').innerHTML = '<div class="loading">החדשות אינן זמינות</div>';
+    document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
+  }
+}
+
+function renderNewsPanel(items) {
+  const list = document.getElementById('news-list');
+
+  // Build items HTML — duplicate for seamless loop
+  const itemsHtml = items.map(item => `
+    <div class="news-item">
+      <div class="news-headline">${escapeHtml(item.title)}</div>
+      <div class="news-source">${escapeHtml(item.author || '')}</div>
+    </div>
+  `).join('');
+
+  const scroller = document.createElement('div');
+  scroller.className = 'news-scroller';
+  // Duplicate content for seamless infinite scroll
+  scroller.innerHTML = itemsHtml + itemsHtml;
+  list.innerHTML = '';
+  list.appendChild(scroller);
+
+  // Set animation duration based on item count (~4s per item)
+  const duration = items.length * 4;
+  scroller.style.animationDuration = `${duration}s`;
+}
+
+function renderTicker(items) {
+  const el = document.getElementById('ticker-content');
+  const text = items.map(i => i.title).join('     •     ');
+  el.textContent = text;
+  const charWidth = 11;
+  const totalPx = text.length * charWidth + 1920;
+  el.style.animationDuration = `${totalPx / 120}s`;
 }
 
 // ── Announcements ─────────────────────────────────────────────────────────────
@@ -191,7 +248,6 @@ async function loadAnnouncements() {
   try {
     const data = await fetchJSON(`announcements.json?t=${Date.now()}`);
     if (!data.length) throw new Error('empty');
-
     el.innerHTML = data.slice(0, 3).map(item => `
       <div class="announcement">
         ${escapeHtml(item.text)}
@@ -199,7 +255,7 @@ async function loadAnnouncements() {
       </div>
     `).join('');
   } catch {
-    el.innerHTML = '<div class="no-announcements">No announcements</div>';
+    el.innerHTML = '<div class="no-announcements">אין הודעות</div>';
   }
 }
 
@@ -215,14 +271,12 @@ function startImageRotation() {
       el.style.backgroundImage = `url('${IMAGES[index]}')`;
       el.classList.add('visible');
       index = (index + 1) % IMAGES.length;
-    }, 600);
+    }, 800);
   }
 
-  // Preload first image then show
-  const img = new Image();
-  img.onload = showNext;
-  img.onerror = showNext;
-  img.src = IMAGES[0];
+  const first = new Image();
+  first.onload = first.onerror = showNext;
+  first.src = IMAGES[0];
 
   setInterval(showNext, CONFIG.imageRotateMs);
 }
@@ -234,7 +288,7 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-function escapeHtml(str) {
+function escapeHtml(str = '') {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

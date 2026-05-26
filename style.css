@@ -6,15 +6,16 @@
 
 :root {
   --gold: #f0c040;
-  --gold-dim: rgba(240, 192, 64, 0.6);
-  --bg: #080810;
+  --gold-dim: rgba(240, 192, 64, 0.5);
+  --bg: #080812;
   --panel-bg: rgba(255, 255, 255, 0.05);
-  --panel-border: rgba(255, 255, 255, 0.1);
+  --panel-border: rgba(255, 255, 255, 0.09);
   --text: #f0f0f0;
   --text-muted: #888;
-  --sidebar-w: 500px;
-  --header-h: 88px;
-  --ticker-h: 64px;
+  --sidebar-w: 460px;
+  --news-w: 370px;
+  --header-h: 90px;
+  --ticker-h: 62px;
 }
 
 html, body {
@@ -23,7 +24,7 @@ html, body {
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Heebo', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -39,55 +40,115 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 48px;
-  background: rgba(8, 8, 16, 0.75);
+  padding: 0 40px;
+  background: rgba(8, 8, 18, 0.85);
   border-bottom: 1px solid var(--gold-dim);
-  backdrop-filter: blur(12px);
-  z-index: 10;
+  backdrop-filter: blur(16px);
+  gap: 24px;
 }
 
-#building-name {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-#header-right {
+/* start = right side in RTL (clock + dates) */
+#header-start {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+  align-items: center;
+  gap: 24px;
+  flex-shrink: 0;
 }
 
 #clock {
-  font-size: 52px;
-  font-weight: 200;
-  letter-spacing: 4px;
+  font-size: 54px;
+  font-weight: 300;
+  letter-spacing: 3px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  direction: ltr; /* keep clock digits LTR */
+}
+
+#dates {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#gregorian-date {
+  font-size: 16px;
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 #hebrew-date {
   font-size: 15px;
-  color: var(--text-muted);
-  letter-spacing: 1px;
-  direction: rtl;
+  color: var(--gold-dim);
+  font-weight: 400;
 }
 
-/* ── Main ── */
+/* Building name — center */
+#building-name {
+  flex: 1;
+  text-align: center;
+  line-height: 1.2;
+}
+
+#welcome-text {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(240, 192, 64, 0.65);
+  letter-spacing: 1px;
+}
+
+#building-title {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+/* end = left side in RTL (weather) */
+#header-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+#weather-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  direction: ltr;
+}
+
+#weather-icon-mini {
+  font-size: 34px;
+  line-height: 1;
+}
+
+#weather-temp-mini {
+  font-size: 42px;
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+#weather-desc-mini {
+  font-size: 14px;
+  color: var(--text-muted);
+  padding-right: 4px;
+}
+
+/* ── Main layout (3 columns, RTL order: sidebar | image | news) ── */
 #main {
   display: grid;
-  grid-template-columns: 1fr var(--sidebar-w);
+  grid-template-columns: var(--sidebar-w) 1fr var(--news-w);
   overflow: hidden;
 }
 
-/* ── Image panel ── */
+/* ── Image panel (center) ── */
 #image-panel {
   position: relative;
   overflow: hidden;
-  background: #111;
+  background: #0d0d18;
 }
 
 #bg-image {
@@ -107,17 +168,18 @@ html, body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, transparent 55%, rgba(8, 8, 16, 0.9) 100%),
-    linear-gradient(to top, rgba(8, 8, 16, 0.4) 0%, transparent 25%);
+    linear-gradient(to left,  transparent 50%, rgba(8, 8, 18, 0.85) 100%),
+    linear-gradient(to right, transparent 50%, rgba(8, 8, 18, 0.85) 100%),
+    linear-gradient(to top,   rgba(8, 8, 18, 0.35) 0%, transparent 20%);
 }
 
-/* ── Sidebar ── */
+/* ── Sidebar (right column) ── */
 #sidebar {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 18px 18px 18px 0;
-  background: rgba(8, 8, 16, 0.8);
+  padding: 16px 16px 16px 0;
+  background: rgba(8, 8, 18, 0.75);
   overflow: hidden;
 }
 
@@ -138,7 +200,7 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 3px;
   color: var(--gold-dim);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   flex-shrink: 0;
 }
 
@@ -147,54 +209,30 @@ html, body {
   font-size: 15px;
 }
 
-/* ── Weather ── */
-#weather-content {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex: 1;
-}
-
-.weather-icon {
-  font-size: 54px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.weather-temp {
-  font-size: 58px;
-  font-weight: 200;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.weather-desc {
-  font-size: 16px;
-  color: var(--text-muted);
-  margin-top: 4px;
-  text-transform: capitalize;
-}
-
-.weather-meta {
-  font-size: 13px;
-  color: #666;
-  margin-top: 5px;
-}
-
-/* ── Shabbat ── */
+/* ── Shabbat panel ── */
 #shabbat-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   justify-content: center;
 }
 
 .shabbat-parasha {
-  font-size: 14px;
+  font-size: 17px;
   color: var(--gold);
-  margin-bottom: 4px;
   font-weight: 600;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 10px;
+}
+
+.shabbat-holiday {
+  font-size: 20px;
+  color: var(--gold);
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
 }
 
 .shabbat-row {
@@ -204,22 +242,31 @@ html, body {
 }
 
 .shabbat-label {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-muted);
 }
 
 .shabbat-time {
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 2px;
+  direction: ltr;
+  letter-spacing: 1px;
 }
 
-.shabbat-row.active .shabbat-time {
+.shabbat-row.active .shabbat-label { color: var(--text); }
+.shabbat-row.active .shabbat-time  { color: var(--gold); }
+
+.shabbat-shalom {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--gold);
+  letter-spacing: 2px;
+  padding: 8px 0;
 }
 
-/* ── Announcements ── */
+/* ── Announcements panel ── */
 #announcements-content {
   display: flex;
   flex-direction: column;
@@ -229,8 +276,8 @@ html, body {
 }
 
 .announcement {
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.6;
   color: #ddd;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -242,7 +289,7 @@ html, body {
 }
 
 .announcement-date {
-  font-size: 11px;
+  font-size: 12px;
   color: #555;
   margin-top: 3px;
 }
@@ -252,13 +299,76 @@ html, body {
   font-size: 15px;
 }
 
-/* ── News ticker ── */
+/* ── News panel (left column) ── */
+#news-panel {
+  background: rgba(8, 8, 18, 0.8);
+  padding: 16px 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#news-panel .panel-title {
+  padding-right: 4px;
+}
+
+#news-list {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+#news-list::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, rgba(8, 8, 18, 0.9) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.news-scroller {
+  animation: news-scroll-up linear infinite;
+}
+
+@keyframes news-scroll-up {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.news-item {
+  padding: 12px 4px 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: default;
+}
+
+.news-item:last-child {
+  border-bottom: none;
+}
+
+.news-headline {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: #e0e0e0;
+}
+
+.news-source {
+  font-size: 11px;
+  color: #555;
+  margin-top: 3px;
+}
+
+/* ── Ticker ── */
 #ticker-bar {
   display: flex;
   align-items: center;
-  background: rgba(8, 8, 16, 0.85);
+  background: rgba(8, 8, 18, 0.9);
   border-top: 1px solid var(--gold-dim);
   overflow: hidden;
+  direction: ltr; /* keep ticker LTR for animation */
 }
 
 #ticker-label {
@@ -272,6 +382,7 @@ html, body {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  font-family: 'Heebo', sans-serif;
 }
 
 #ticker-wrapper {
@@ -284,11 +395,13 @@ html, body {
 
 #ticker-content {
   white-space: nowrap;
-  font-size: 19px;
-  color: #e0e0e0;
+  font-size: 18px;
+  color: #e8e8e8;
   padding-left: 100vw;
   animation: ticker-scroll linear infinite;
   will-change: transform;
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
 }
 
 @keyframes ticker-scroll {

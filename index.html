@@ -1,49 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1920">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <title>Lobby Display</title>
+  <title>קרן היסוד 5</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
 
+    <!-- Header -->
     <header id="header">
-      <div id="building-name"></div>
-      <div id="header-right">
-        <div id="hebrew-date"></div>
+      <div id="header-start">
         <div id="clock"></div>
+        <div id="dates">
+          <div id="gregorian-date"></div>
+          <div id="hebrew-date"></div>
+        </div>
+      </div>
+      <div id="building-name">
+        <div id="welcome-text">ברוכים הבאים ל</div>
+        <div id="building-title">קרן היסוד 5</div>
+      </div>
+      <div id="header-end">
+        <div id="weather-mini">
+          <span id="weather-icon-mini"></span>
+          <span id="weather-temp-mini"></span>
+        </div>
+        <div id="weather-desc-mini"></div>
       </div>
     </header>
 
+    <!-- Main 3-column layout (RTL: right=col1, center=col2, left=col3) -->
     <main id="main">
+
+      <!-- Col 1 (visual right): Shabbat + Announcements -->
+      <aside id="sidebar">
+        <div class="panel" id="shabbat-panel">
+          <div class="panel-title">זמני שבת</div>
+          <div id="shabbat-content"><span class="loading">טוען…</span></div>
+        </div>
+        <div class="panel" id="announcements-panel">
+          <div class="panel-title">הודעות לדיירים</div>
+          <div id="announcements-content"><span class="loading">טוען…</span></div>
+        </div>
+      </aside>
+
+      <!-- Col 2 (center): Rotating image -->
       <div id="image-panel">
         <div id="bg-image"></div>
         <div id="image-overlay"></div>
       </div>
 
-      <aside id="sidebar">
-        <div class="panel" id="weather-panel">
-          <div class="panel-title">Weather · Jerusalem</div>
-          <div id="weather-content"><span class="loading">Loading…</span></div>
-        </div>
+      <!-- Col 3 (visual left): News headlines -->
+      <div id="news-panel">
+        <div class="panel-title">חדשות</div>
+        <div id="news-list"></div>
+      </div>
 
-        <div class="panel" id="shabbat-panel">
-          <div class="panel-title">Shabbat Times</div>
-          <div id="shabbat-content"><span class="loading">Loading…</span></div>
-        </div>
-
-        <div class="panel" id="announcements-panel">
-          <div class="panel-title">Announcements</div>
-          <div id="announcements-content"><span class="loading">Loading…</span></div>
-        </div>
-      </aside>
     </main>
 
+    <!-- News ticker -->
     <footer id="ticker-bar">
-      <div id="ticker-label">NEWS</div>
+      <div id="ticker-label">חדשות</div>
       <div id="ticker-wrapper">
         <div id="ticker-content"></div>
       </div>
