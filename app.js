@@ -335,7 +335,7 @@ function renderTicker(items) {
   el.innerHTML = parts.join('&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;');
 
   const approxChars = items.reduce((n, i) => n + i.title.length + 12, 0);
-  el.style.animationDuration = `${Math.max(40, approxChars * 0.09)}s`;
+  el.style.animationDuration = `${Math.max(80, approxChars * 0.18)}s`;
 }
 
 // ── Announcements ─────────────────────────────────────────────────────────────
