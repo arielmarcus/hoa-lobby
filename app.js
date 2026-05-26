@@ -29,10 +29,10 @@ const CONFIG = {
 
 // Background images — replace paths with your own photos, e.g. 'images/spring/lobby.jpg'
 const IMAGES = [
-  'images/WhatsApp Image 2026-05-27 at 00.46.35.jpeg',
-  'images/WhatsApp Image 2026-05-27 at 00.46.04.jpeg',
-  'images/WhatsApp Image 2026-05-27 at 00.46.04 (1).jpeg',
-  'images/WhatsApp Image 2026-05-27 at 00.46.04 (2).jpeg',
+  'images/building.jpg',
+  'images/jerusalem1.jpg',
+  'images/jerusalem2.jpg',
+  'images/jerusalem3.jpg',
 ];
 
 // ── Hebrew strings ─────────────────────────────────────────────────────────────
