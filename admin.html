@@ -426,7 +426,7 @@
 
       const data = await res.json();
       fileSha = data.sha;
-      items   = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      items   = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
       if (!Array.isArray(items)) items = [];
 
       localStorage.setItem('hoa_admin_token', token);
