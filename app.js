@@ -17,6 +17,7 @@ const MUSIC_TRACKS = [
 let shabbatTimes = { candleTime: null, havdalahTime: null };
 let shabbatModeActive = false;
 let lobbyAudio = null; // set by startMusic(), used by Shabbat mode
+let shabbatParasha = '';  // parasha/holiday name for Shabbat overlay
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {
@@ -203,6 +204,7 @@ async function loadShabbatTimes() {
     const candleTime   = new Date(new Date(friSunset).getTime() - 36 * 60_000);
     const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
     shabbatTimes = { candleTime, havdalahTime };
+    shabbatParasha = title;
     scheduleShabbatMode();
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -488,6 +490,9 @@ function updateShabbatOverlay() {
   const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
   document.getElementById('shabbat-candle-time').textContent   = fmt(candleTime);
   document.getElementById('shabbat-havdalah-time').textContent = fmt(havdalahTime);
+  const parashaEl = document.getElementById('shabbat-overlay-parasha');
+  parashaEl.textContent = shabbatParasha;
+  parashaEl.style.display = shabbatParasha ? '' : 'none';
 }
 
 function updateOverlayDate() {
