@@ -448,8 +448,8 @@ html, body {
   z-index: 100;
   background-color: #080f2e;
   background-image:
-    linear-gradient(rgba(8, 16, 48, 0.72), rgba(8, 16, 48, 0.72)),
-    url('images/shabbat-challah-candles.jpg');
+    linear-gradient(rgba(8, 16, 48, 0.55), rgba(8, 16, 48, 0.55)),
+    url('images/challah-shabbat.jpg');
   background-size: cover;
   background-position: center;
   flex-direction: column;
