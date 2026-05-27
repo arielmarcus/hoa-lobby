@@ -213,6 +213,7 @@ async function loadShabbatTimes() {
     shabbatTimes = { candleTime, havdalahTime };
     shabbatParasha = title;
     scheduleShabbatMode();
+    if (shabbatModeActive) updateShabbatOverlay(); // refresh if overlay already showing
 
     if (isShabbat) {
       el.innerHTML = `
