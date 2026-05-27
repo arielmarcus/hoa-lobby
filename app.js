@@ -203,15 +203,16 @@ async function loadShabbatTimes() {
     // Israeli Rabbinate offsets
     const candleTime   = new Date(new Date(friSunset).getTime() - 36 * 60_000);
     const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
-    shabbatTimes = { candleTime, havdalahTime };
-    shabbatParasha = title;
-    scheduleShabbatMode();
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     const parasha = shabbatData.items.find(i => i.category === 'parashat');
     const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
     const title   = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+
+    shabbatTimes = { candleTime, havdalahTime };
+    shabbatParasha = title;
+    scheduleShabbatMode();
 
     if (isShabbat) {
       el.innerHTML = `
