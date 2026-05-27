@@ -439,3 +439,76 @@ html, body {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Shabbat mode overlay ── */
+#shabbat-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, var(--blue) 0%, var(--blue-mid) 100%);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  color: #fff;
+  text-align: center;
+  padding: 60px;
+}
+
+#shabbat-overlay.visible { display: flex; }
+
+#shabbat-overlay-clock {
+  font-size: 160px;
+  font-weight: 200;
+  letter-spacing: 8px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  direction: ltr;
+}
+
+#shabbat-overlay-date {
+  font-size: 34px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+#shabbat-overlay-weather {
+  font-size: 40px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+#shabbat-overlay-times {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  margin-top: 16px;
+  border-top: 1px solid rgba(200, 154, 24, 0.35);
+  padding-top: 36px;
+  width: 100%;
+  max-width: 1100px;
+}
+
+.shabbat-overlay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  direction: rtl;
+  gap: 40px;
+}
+
+.shabbat-overlay-label {
+  font-size: 48px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.shabbat-overlay-time {
+  font-size: 120px;
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-light);
+  line-height: 1;
+  direction: ltr;
+}

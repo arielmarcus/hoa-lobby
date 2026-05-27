@@ -13,6 +13,10 @@ const MUSIC_TRACKS = [
   'Music/tunetank-cinematic-ambient-348342.mp3',
 ];
 
+// ── Shabbat mode state ────────────────────────────────────────────────────────
+let shabbatTimes = { candleTime: null, havdalahTime: null };
+let shabbatModeActive = false;
+
 // ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {
   lat: 31.7683,
@@ -88,12 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Clock ─────────────────────────────────────────────────────────────────────
 function startClock() {
   const el = document.getElementById('clock');
+  const elOverlay = document.getElementById('shabbat-overlay-clock');
   function tick() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2, '0');
     const m = String(now.getMinutes()).padStart(2, '0');
     const s = String(now.getSeconds()).padStart(2, '0');
-    el.textContent = `${h}:${m}:${s}`;
+    const timeStr = `${h}:${m}:${s}`;
+    el.textContent = timeStr;
+    elOverlay.textContent = timeStr;
   }
   tick();
   setInterval(tick, 1000);
@@ -105,8 +112,11 @@ function updateGregorianDate() {
   const dayName   = HE_DAYS[now.getDay()];
   const dayNum    = now.getDate();
   const monthName = HE_MONTHS[now.getMonth()];
-  document.getElementById('gregorian-date').textContent =
-    `יום ${dayName}, ${dayNum} ${monthName}`;
+  const gregStr = `יום ${dayName}, ${dayNum} ${monthName}`;
+  document.getElementById('gregorian-date').textContent = gregStr;
+  // Store for overlay (combined with Hebrew date)
+  document.getElementById('shabbat-overlay-date').dataset.greg = gregStr;
+  updateOverlayDate();
 
   // Refresh at midnight
   const tomorrow = new Date(now);
@@ -121,7 +131,10 @@ async function loadHebrewDate() {
   try {
     const url = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth() + 1}&gd=${now.getDate()}&g2h=1`;
     const data = await fetchJSON(url);
-    document.getElementById('hebrew-date').textContent = data.hebrew ?? '';
+    const hebStr = data.hebrew ?? '';
+    document.getElementById('hebrew-date').textContent = hebStr;
+    document.getElementById('shabbat-overlay-date').dataset.heb = hebStr;
+    updateOverlayDate();
   } catch { /* silent */ }
 
   const tomorrow = new Date(now);
@@ -143,6 +156,8 @@ async function loadWeather() {
     document.getElementById('weather-temp-mini').textContent = `${Math.round(c.temperature_2m)}°`;
     document.getElementById('weather-desc-mini').textContent =
       `${wmo.label} · מרגיש ${Math.round(c.apparent_temperature)}°`;
+    document.getElementById('shabbat-overlay-weather').textContent =
+      `${wmo.icon}  ${Math.round(c.temperature_2m)}°  ${wmo.label}`;
   } catch { /* leave previous value */ }
 }
 
@@ -186,6 +201,8 @@ async function loadShabbatTimes() {
     // Israeli Rabbinate offsets
     const candleTime   = new Date(new Date(friSunset).getTime() - 36 * 60_000);
     const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
+    shabbatTimes = { candleTime, havdalahTime };
+    scheduleShabbatMode();
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
 
@@ -427,6 +444,53 @@ function startMusic() {
     document.addEventListener('click', resume);
     document.addEventListener('keydown', resume);
   });
+}
+
+// ── Shabbat mode ──────────────────────────────────────────────────────────────
+let _shabbatModeInterval = null;
+
+function scheduleShabbatMode() {
+  // Only register the interval once
+  if (_shabbatModeInterval) return;
+  checkShabbatMode();
+  _shabbatModeInterval = setInterval(checkShabbatMode, 30_000);
+}
+
+function checkShabbatMode() {
+  const { candleTime, havdalahTime } = shabbatTimes;
+  if (!candleTime || !havdalahTime) return;
+  const now = Date.now();
+  const active = now >= candleTime.getTime() - 30 * 60_000
+              && now < havdalahTime.getTime();
+  active ? enterShabbatMode() : exitShabbatMode();
+}
+
+function enterShabbatMode() {
+  if (shabbatModeActive) return;
+  shabbatModeActive = true;
+  updateShabbatOverlay();
+  document.getElementById('shabbat-overlay').classList.add('visible');
+}
+
+function exitShabbatMode() {
+  if (!shabbatModeActive) return;
+  shabbatModeActive = false;
+  document.getElementById('shabbat-overlay').classList.remove('visible');
+}
+
+function updateShabbatOverlay() {
+  const { candleTime, havdalahTime } = shabbatTimes;
+  if (!candleTime || !havdalahTime) return;
+  const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+  document.getElementById('shabbat-candle-time').textContent   = fmt(candleTime);
+  document.getElementById('shabbat-havdalah-time').textContent = fmt(havdalahTime);
+}
+
+function updateOverlayDate() {
+  const el = document.getElementById('shabbat-overlay-date');
+  const heb  = el.dataset.heb  ?? '';
+  const greg = el.dataset.greg ?? '';
+  el.textContent = [heb, greg].filter(Boolean).join('  ·  ');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
