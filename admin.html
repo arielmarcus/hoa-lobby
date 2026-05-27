@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ניהול לוח מודעות — קרן היסוד 5</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #30363d;
+      --accent:    #c8a84b;
+      --accent2:   #e6c96a;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --danger:    #da3633;
+      --success:   #3fb950;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .page-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .page-header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 720px;
+      margin: 0 auto 24px;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Auth section ── */
+    #auth-section label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    #auth-section .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    #auth-section input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      direction: ltr;
+      text-align: left;
+    }
+    #auth-section input:focus { outline: none; border-color: var(--accent); }
+    .auth-hint {
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .auth-hint a { color: var(--accent); }
+
+    /* ── Status bar ── */
+    #status-bar {
+      max-width: 720px;
+      margin: 0 auto 16px;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 0.88rem;
+      display: none;
+    }
+    #status-bar.success { background: #1a3a1f; border: 1px solid var(--success); color: var(--success); display: block; }
+    #status-bar.error   { background: #3a1a1a; border: 1px solid var(--danger);  color: var(--danger);  display: block; }
+    #status-bar.info    { background: #1a2a3a; border: 1px solid #58a6ff;         color: #58a6ff;        display: block; }
+
+    /* ── Announcements list ── */
+    #announcements-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .announcement-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .announcement-item .item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .item-number {
+      background: var(--accent);
+      color: #0d1117;
+      font-weight: 700;
+      font-size: 0.75rem;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .item-header-actions {
+      margin-right: auto; /* pushes to left in RTL */
+      margin-left: 0;
+      display: flex;
+      gap: 6px;
+    }
+
+    .announcement-item textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 9px 12px;
+      resize: vertical;
+      min-height: 60px;
+      line-height: 1.6;
+    }
+    .announcement-item textarea:focus { outline: none; border-color: var(--accent); }
+
+    .date-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .date-row label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+    .date-row input[type="text"] {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+    }
+    .date-row input[type="text"]:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 28px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── Buttons ── */
+    button {
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: opacity 0.15s, filter 0.15s;
+    }
+    button:hover { filter: brightness(1.15); }
+    button:active { filter: brightness(0.9); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+    .btn-primary   { background: var(--accent);  color: #0d1117; }
+    .btn-secondary { background: #21262d; color: var(--text); border: 1px solid var(--border); }
+    .btn-danger    { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 5px 10px; font-size: 0.8rem; }
+    .btn-sm        { padding: 5px 12px; font-size: 0.82rem; }
+    .btn-icon      { background: transparent; color: var(--muted); padding: 4px 8px; font-size: 1rem; border: 1px solid transparent; }
+    .btn-icon:hover { color: var(--text); border-color: var(--border); filter: none; }
+
+    /* ── Action row ── */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .action-row .spacer { flex: 1; }
+
+    /* ── Connection badge ── */
+    #conn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+    #conn-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    #conn-badge.connected .dot   { background: var(--success); }
+    #conn-badge.connected        { color: var(--text); }
+    #conn-badge.error .dot       { background: var(--danger); }
+
+    /* ── Counter ── */
+    .counter { font-size: 0.8rem; color: var(--muted); }
+    .counter span { color: var(--text); font-weight: 600; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    /* ── Preview section ── */
+    #preview-panel {
+      background: #111820;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    #preview-panel h3 {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .preview-item {
+      border-right: 3px solid var(--accent);
+      padding-right: 12px;
+      margin-bottom: 12px;
+    }
+    .preview-item:last-child { margin-bottom: 0; }
+    .preview-text { font-size: 0.95rem; line-height: 1.5; }
+    .preview-date { font-size: 0.75rem; color: var(--accent); margin-top: 3px; }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .action-row { justify-content: stretch; }
+      .action-row button { flex: 1; }
+      #auth-section .input-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>ניהול לוח מודעות</h1>
+  <p>קרן היסוד 5 — פורטל ניהול</p>
+</div>
+
+<div id="status-bar"></div>
+
+<!-- Auth Card -->
+<div class="card" id="auth-section">
+  <h2>🔑 חיבור ל-GitHub</h2>
+  <label for="pat-input">Personal Access Token (classic — scope: <code>public_repo</code>)</label>
+  <div class="input-row">
+    <input type="password" id="pat-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+    <button class="btn-primary" onclick="connect()">חיבור</button>
+    <div id="conn-badge">
+      <span class="dot"></span>
+      <span id="conn-label">לא מחובר</span>
+    </div>
+  </div>
+  <p class="auth-hint">
+    הטוקן נשמר ב-localStorage של הדפדפן בלבד ולא נשלח לשום שרת חיצוני.<br>
+    ליצירת טוקן: <a href="https://github.com/settings/tokens/new?scopes=public_repo&description=hoa-lobby-admin" target="_blank">GitHub → Settings → Developer settings → Personal access tokens</a>
+  </p>
+</div>
+
+<!-- Announcements Card -->
+<div class="card" id="announcements-section" style="display:none">
+  <h2>📋 מודעות פעילות <span class="counter">(<span id="count-display">0</span>/3)</span></h2>
+
+  <div id="announcements-list">
+    <div class="empty-state">טוען מודעות…</div>
+  </div>
+
+  <hr>
+
+  <div class="action-row">
+    <button class="btn-secondary" onclick="addAnnouncement()" id="btn-add">+ הוסף מודעה</button>
+    <div class="spacer"></div>
+    <button class="btn-primary" onclick="saveAnnouncements()" id="btn-save">
+      💾 שמור ופרסם
+    </button>
+  </div>
+
+  <div id="preview-panel" style="display:none">
+    <h3>תצוגה מקדימה</h3>
+    <div id="preview-items"></div>
+  </div>
+</div>
+
+<!-- Help Card -->
+<div class="card" id="help-section" style="display:none">
+  <h2>ℹ️ מידע</h2>
+  <p style="font-size:0.85rem; color:var(--muted); line-height:1.7">
+    השינויים נשמרים ישירות ל-<code>announcements.json</code> בענף <code>main</code> ב-GitHub.<br>
+    GitHub Pages מפרסם את השינויים תוך כ-2 דקות.<br>
+    מסך הלובי מתרענן כל 30 דקות (או בלחיצה ידנית על F5).<br>
+    ניתן להציג עד <strong>3 מודעות</strong> בו-זמנית.
+  </p>
+</div>
+
+<script>
+  const REPO   = 'arielmarcus/hoa-lobby';
+  const BRANCH = 'main';
+  const FILE   = 'announcements.json';
+
+  let token   = '';
+  let fileSha = '';
+  let items   = [];   // { text, date }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  (function init() {
+    const saved = localStorage.getItem('hoa_admin_token');
+    if (saved) {
+      document.getElementById('pat-input').value = saved;
+      connect();
+    }
+  })();
+
+  // ── Status helpers ────────────────────────────────────────────────────────
+  function showStatus(msg, type = 'info') {
+    const bar = document.getElementById('status-bar');
+    bar.textContent = msg;
+    bar.className = type;
+    if (type === 'success') setTimeout(() => bar.style.display = 'none', 4000);
+  }
+  function hideStatus() {
+    document.getElementById('status-bar').style.display = 'none';
+  }
+
+  // ── GitHub API helpers ────────────────────────────────────────────────────
+  async function ghFetch(path, opts = {}) {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/${path}`, {
+      ...opts,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept':        'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(opts.headers || {}),
+      },
+    });
+    return res;
+  }
+
+  // ── Connect ───────────────────────────────────────────────────────────────
+  async function connect() {
+    token = document.getElementById('pat-input').value.trim();
+    if (!token) { showStatus('נא להזין טוקן.', 'error'); return; }
+
+    setBadge('loading');
+    showStatus('מתחבר ל-GitHub…', 'info');
+
+    try {
+      const res = await ghFetch(`contents/${FILE}?ref=${BRANCH}`);
+      if (res.status === 401) throw new Error('טוקן לא תקין — בדוק את ה-PAT.');
+      if (res.status === 403) throw new Error('אין הרשאה לקובץ זה — ודא שהסקופ public_repo מוגדר.');
+      if (!res.ok) throw new Error(`שגיאת GitHub: ${res.status}`);
+
+      const data = await res.json();
+      fileSha = data.sha;
+      items   = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      if (!Array.isArray(items)) items = [];
+
+      localStorage.setItem('hoa_admin_token', token);
+      setBadge('connected');
+      showStatus('מחובר בהצלחה!', 'success');
+
+      document.getElementById('announcements-section').style.display = 'block';
+      document.getElementById('help-section').style.display          = 'block';
+      renderList();
+    } catch (e) {
+      setBadge('error');
+      showStatus(e.message, 'error');
+    }
+  }
+
+  function setBadge(state) {
+    const badge = document.getElementById('conn-badge');
+    const label = document.getElementById('conn-label');
+    badge.className = '';
+    if (state === 'connected') { badge.classList.add('connected'); label.textContent = 'מחובר'; }
+    else if (state === 'error') { badge.classList.add('error');    label.textContent = 'שגיאה'; }
+    else { label.textContent = state === 'loading' ? 'מתחבר…' : 'לא מחובר'; }
+  }
+
+  // ── Render list ───────────────────────────────────────────────────────────
+  function renderList() {
+    const list = document.getElementById('announcements-list');
+    document.getElementById('count-display').textContent = items.length;
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="empty-state">אין מודעות כרגע. לחץ "הוסף מודעה" להתחיל.</div>';
+      document.getElementById('preview-panel').style.display = 'none';
+      document.getElementById('btn-add').disabled = false;
+      return;
+    }
+
+    list.innerHTML = items.map((item, i) => `
+      <div class="announcement-item" data-index="${i}">
+        <div class="item-header">
+          <span class="item-number">${i + 1}</span>
+          <span style="font-size:0.8rem;color:var(--muted)">מודעה ${i + 1}</span>
+          <div class="item-header-actions">
+            ${i > 0               ? `<button class="btn-icon" title="הזז למעלה"  onclick="moveItem(${i}, -1)">↑</button>` : ''}
+            ${i < items.length-1  ? `<button class="btn-icon" title="הזז למטה"   onclick="moveItem(${i},  1)">↓</button>` : ''}
+            <button class="btn-danger btn-sm" onclick="removeItem(${i})">מחק</button>
+          </div>
+        </div>
+        <textarea rows="2" placeholder="טקסט המודעה…"
+          oninput="updateItem(${i}, 'text', this.value)"
+        >${escHtml(item.text)}</textarea>
+        <div class="date-row">
+          <label>תאריך / תווית (אופציונלי):</label>
+          <input type="text" placeholder="למשל: 1 ביוני 2025"
+            value="${escHtml(item.date || '')}"
+            oninput="updateItem(${i}, 'date', this.value)">
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('btn-add').disabled = items.length >= 3;
+    renderPreview();
+  }
+
+  // ── CRUD helpers ──────────────────────────────────────────────────────────
+  function addAnnouncement() {
+    if (items.length >= 3) { showStatus('ניתן להוסיף עד 3 מודעות בלבד.', 'error'); return; }
+    items.push({ text: '', date: '' });
+    renderList();
+    // focus the new textarea
+    setTimeout(() => {
+      const tas = document.querySelectorAll('#announcements-list textarea');
+      if (tas.length) tas[tas.length - 1].focus();
+    }, 50);
+  }
+
+  function removeItem(i) {
+    items.splice(i, 1);
+    renderList();
+  }
+
+  function updateItem(i, field, value) {
+    items[i][field] = value;
+    renderPreview();
+  }
+
+  function moveItem(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    [items[i], items[j]] = [items[j], items[i]];
+    renderList();
+  }
+
+  // ── Preview ───────────────────────────────────────────────────────────────
+  function renderPreview() {
+    const panel = document.getElementById('preview-panel');
+    const container = document.getElementById('preview-items');
+    const visible = items.filter(it => it.text.trim());
+    if (!visible.length) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    container.innerHTML = visible.map(it => `
+      <div class="preview-item">
+        <div class="preview-text">${escHtml(it.text)}</div>
+        ${it.date ? `<div class="preview-date">${escHtml(it.date)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  async function saveAnnouncements() {
+    const clean = items.filter(it => it.text.trim()).map(it => ({
+      text: it.text.trim(),
+      date: (it.date || '').trim(),
+    }));
+
+    if (!clean.length) {
+      if (!confirm('אין מודעות להציג. לשמור קובץ ריק?')) return;
+    }
+
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> שומר…';
+    showStatus('מפרסם שינויים…', 'info');
+
+    try {
+      const content = btoa(unescape(encodeURIComponent(
+        JSON.stringify(clean, null, 2)
+      )));
+
+      const body = {
+        message: `admin: update announcements (${new Date().toLocaleString('he-IL')})`,
+        content,
+        sha:    fileSha,
+        branch: BRANCH,
+      };
+
+      const res = await ghFetch(`contents/${FILE}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+
+      if (res.status === 409) {
+        showStatus('קונפליקט: הקובץ שונה על ידי מישהו אחר. מרענן…', 'error');
+        await connect();
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `שגיאת GitHub: ${res.status}`);
+      }
+
+      const data = await res.json();
+      fileSha = data.content.sha;  // update sha for next save
+      items   = clean;
+      renderList();
+      showStatus('✓ המודעות פורסמו בהצלחה! GitHub Pages יתעדכן תוך ~2 דקות.', 'success');
+    } catch (e) {
+      showStatus(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '💾 שמור ופרסם';
+    }
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>
