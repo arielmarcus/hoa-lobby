@@ -449,7 +449,7 @@ html, body {
   background-color: #080f2e;
   background-image:
     linear-gradient(rgba(8, 16, 48, 0.72), rgba(8, 16, 48, 0.72)),
-    url('https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Shabbat_Candles.jpg/1920px-Shabbat_Candles.jpg');
+    url('images/shabbat-candles.jpg');
   background-size: cover;
   background-position: center;
   flex-direction: column;
