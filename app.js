@@ -16,6 +16,7 @@ const MUSIC_TRACKS = [
 // ── Shabbat mode state ────────────────────────────────────────────────────────
 let shabbatTimes = { candleTime: null, havdalahTime: null };
 let shabbatModeActive = false;
+let lobbyAudio = null; // set by startMusic(), used by Shabbat mode
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 const CONFIG = {
@@ -416,7 +417,8 @@ function startImageRotation() {
 function startMusic() {
   if (!MUSIC_TRACKS.length) return;
 
-  const audio = new Audio();
+  lobbyAudio = new Audio();
+  const audio = lobbyAudio;
   audio.volume = 0.35;
 
   // Shuffle a copy of the track list
@@ -470,12 +472,14 @@ function enterShabbatMode() {
   shabbatModeActive = true;
   updateShabbatOverlay();
   document.getElementById('shabbat-overlay').classList.add('visible');
+  if (lobbyAudio) lobbyAudio.pause();
 }
 
 function exitShabbatMode() {
   if (!shabbatModeActive) return;
   shabbatModeActive = false;
   document.getElementById('shabbat-overlay').classList.remove('visible');
+  if (lobbyAudio) lobbyAudio.play().catch(() => {});
 }
 
 function updateShabbatOverlay() {
