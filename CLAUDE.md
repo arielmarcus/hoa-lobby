@@ -17,9 +17,10 @@ git add <files> && git commit -m "..." && git push
 ## Local preview
 
 ```bash
-python3 -m http.server 8765 --directory /home/user/hoa-lobby
+python3 -m http.server 8765 --directory /Users/marcus/hoa-lobby
 # then open http://localhost:8765/index.html
 ```
+Or use the `/preview` skill in Claude Code (launch config is at `~/.claude/launch.json`).
 
 ## Updating announcements
 
@@ -63,6 +64,26 @@ The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-b
 - **No CSS `inset` shorthand** — use explicit `top: 0; right: 0; bottom: 0; left: 0` instead. Using `inset` will silently collapse absolutely-positioned elements to 0×0.
 - **No spaces or parentheses in asset filenames** — the browser fails to load URLs with spaces even when URL-encoded in CSS/JS.
 - **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
+
+## Shabbat mode
+
+Auto-activates 30 minutes before candle lighting every Friday; deactivates after havdalah Saturday night.
+
+**What it shows:** Full-screen overlay with שבת שלום banner, פרשה name, live clock, date, weather, candle lighting time and havdalah time in large gold text. Background: `images/challah-shabbat.jpg` with a 55% dark overlay.
+
+**Music:** pauses on entry, resumes after havdalah.
+
+**Key implementation details:**
+- Module-level vars: `shabbatTimes`, `shabbatModeActive`, `shabbatParasha`, `lobbyAudio`
+- `scheduleShabbatMode()` polls every 30s (registered once via `_shabbatModeInterval` guard)
+- `title` (parasha) **must be declared before** `shabbatParasha = title` — TDZ pitfall
+- After times load, `updateShabbatOverlay()` is called again if overlay is already showing (race condition fix)
+- Overlay uses `position: absolute; top/right/bottom/left: 0; z-index: 100` — **do not use `inset` shorthand** (breaks on Fully Kiosk Browser)
+
+**To preview in browser console** (wait ~3 seconds after page load):
+```js
+shabbatParasha = 'במדבר'; enterShabbatMode();
+```
 
 ## Background images
 
