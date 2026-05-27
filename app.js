@@ -22,9 +22,10 @@ const CONFIG = {
   newsPanelUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',  // side panel with images
   newsTickerUrl: 'https://www.c14.co.il/feed/',                       // bottom ticker
   imageRotateMs: 30_000,
-  weatherRefreshMs: 10 * 60_000,
-  newsRefreshMs:    15 * 60_000,
-  pageReloadMs:     30 * 60_000,
+  weatherRefreshMs:       10 * 60_000,
+  newsRefreshMs:          15 * 60_000,
+  announcementsRefreshMs:  5 * 60_000,
+  pageReloadMs:           30 * 60_000,
 };
 
 // Background images — replace paths with your own photos, e.g. 'images/spring/lobby.jpg'
@@ -76,8 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAnnouncements();
   startImageRotation();
 
-  setInterval(loadWeather, CONFIG.weatherRefreshMs);
-  setInterval(loadNews,    CONFIG.newsRefreshMs);
+  setInterval(loadWeather,       CONFIG.weatherRefreshMs);
+  setInterval(loadNews,          CONFIG.newsRefreshMs);
+  setInterval(loadAnnouncements, CONFIG.announcementsRefreshMs);
   setTimeout(() => location.reload(), CONFIG.pageReloadMs);
 
   startMusic();
