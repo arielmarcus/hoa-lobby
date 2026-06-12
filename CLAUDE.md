@@ -49,7 +49,7 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 | News ticker (Channel 14) | rss2json.com proxy → Channel 14 RSS |
 | Announcements | `announcements.json` fetched on load |
 
-**Shabbat time calculation** — candle lighting = Friday sunset − 38 min, havdalah = Saturday sunset + 39 min (tuned to match this shul's published times). Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs).
+**Shabbat time calculation** — candle lighting = Friday sunset − 35 min, havdalah = Saturday sunset + 42 min (tuned to match this shul's published times). Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs). Times formatted with explicit `timeZone: 'Asia/Jerusalem'` so the display is correct regardless of the Android TV's system timezone.
 
 **News panel scroll** — items duplicated in DOM for seamless infinite loop; animation duration = `itemCount * 7` seconds.
 
