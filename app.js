@@ -163,7 +163,7 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// ── Shabbat times (Israeli Rabbinate: sunset−36 / sunset+42) ─────────────────
+// ── Shabbat times (candle lighting = sunset−38 min, havdalah = sunset+39 min) ─
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
@@ -177,7 +177,7 @@ async function loadShabbatTimes() {
     if (dow === 6) {
       friday.setDate(now.getDate() - 1);         // yesterday
     } else {
-      const daysAhead = (5 - dow + 7) % 7 || 7;
+      const daysAhead = (5 - dow + 7) % 7;
       friday.setDate(now.getDate() + daysAhead);
     }
     const saturday = new Date(friday);
@@ -200,11 +200,10 @@ async function loadShabbatTimes() {
     const satSunset = satZ?.times?.sunset;
     if (!friSunset || !satSunset) throw new Error('Missing sunset times from Zmanim API');
 
-    // Israeli Rabbinate offsets
-    const candleTime   = new Date(new Date(friSunset).getTime() - 36 * 60_000);
+    const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60_000);
     const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
 
-    const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 
     const parasha = shabbatData.items.find(i => i.category === 'parashat');
     const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
@@ -489,7 +488,7 @@ function exitShabbatMode() {
 function updateShabbatOverlay() {
   const { candleTime, havdalahTime } = shabbatTimes;
   if (!candleTime || !havdalahTime) return;
-  const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
   document.getElementById('shabbat-candle-time').textContent   = fmt(candleTime);
   document.getElementById('shabbat-havdalah-time').textContent = fmt(havdalahTime);
   const parashaEl = document.getElementById('shabbat-overlay-parasha');
