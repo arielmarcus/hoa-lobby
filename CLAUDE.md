@@ -49,9 +49,9 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 | News ticker (Channel 14) | rss2json.com proxy → Channel 14 RSS |
 | Announcements | `announcements.json` fetched on load |
 
-**Shabbat time calculation** — candle lighting = Friday sunset − 35 min, havdalah = Saturday sunset + 42 min (tuned to match this shul's published times). Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs). Times formatted with explicit `timeZone: 'Asia/Jerusalem'` so the display is correct regardless of the Android TV's system timezone.
+**Shabbat time calculation** — candle lighting = Friday sunset − 35 min, havdalah = Saturday sunset + 42 min. Verified against 4 weeks of the shul's published schedule (July 2026 PDFs): −35/+42 matches to within 1–2 minutes across mid-summer. Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs). Times formatted with explicit `timeZone: 'Asia/Jerusalem'` so display is correct regardless of Android TV system timezone.
 
-**Friday date calculation** — on Erev Shabbat (`dow === 5`) `daysAhead = (5 - dow + 7) % 7` evaluates to `0`, meaning friday = today (correct). Do **not** add `|| 7` as a guard — that would skip to next Friday and show next week's times.
+**Friday date calculation** — on Erev Shabbat (`dow === 5`) `daysAhead = (5 - dow + 7) % 7` evaluates to `0`, meaning friday = today (correct). Do **not** add `|| 7` — that skips to next Friday and shows wrong times.
 
 **News panel scroll** — items duplicated in DOM for seamless infinite loop; animation duration = `itemCount * 7` seconds.
 

@@ -163,7 +163,7 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// ── Shabbat times (candle lighting = sunset−38 min, havdalah = sunset+39 min) ─
+// ── Shabbat times (candle lighting = sunset−35 min, havdalah = sunset+42 min) ─
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
