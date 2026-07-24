@@ -49,7 +49,9 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 | News ticker (Channel 14) | rss2json.com proxy → Channel 14 RSS |
 | Announcements | `announcements.json` fetched on load |
 
-**Shabbat time calculation** — candle lighting = Friday sunset − 38 min, havdalah = Saturday sunset + 39 min (tuned to match this shul's published times). Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs).
+**Shabbat time calculation** — candle lighting = Friday sunset − 35 min, havdalah = Saturday sunset + 42 min. Verified against 4 weeks of the shul's published schedule (July 2023 PDFs): −35/+42 matches to within 1–2 minutes across mid-summer. Both sunsets fetched from HebCal Zmanim using local date strings (not `toISOString()`, which has UTC rollover bugs). Times formatted with explicit `timeZone: 'Asia/Jerusalem'` so display is correct regardless of Android TV system timezone.
+
+**Friday date calculation** — on Erev Shabbat (`dow === 5`) `daysAhead = (5 - dow + 7) % 7` evaluates to `0`, meaning friday = today (correct). Do **not** add `|| 7` — that skips to next Friday and shows wrong times.
 
 **News panel scroll** — items duplicated in DOM for seamless infinite loop; animation duration = `itemCount * 7` seconds.
 
@@ -64,6 +66,7 @@ The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-b
 - **No CSS `inset` shorthand** — use explicit `top: 0; right: 0; bottom: 0; left: 0` instead. Using `inset` will silently collapse absolutely-positioned elements to 0×0.
 - **No spaces or parentheses in asset filenames** — the browser fails to load URLs with spaces even when URL-encoded in CSS/JS.
 - **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
+- **`toLocaleTimeString` may ignore `hour12: false`** — always pass `timeZone: 'Asia/Jerusalem'` alongside `hour12: false` in time formatting calls to ensure 24-hour IST display regardless of the TV's system timezone.
 
 ## Shabbat mode
 
