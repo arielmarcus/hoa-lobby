@@ -44,6 +44,7 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 | Weather | Open-Meteo API (Jerusalem lat/lon) |
 | Shabbat times | HebCal Zmanim API (lat/lon + `tzid=Asia/Jerusalem`) |
 | Parasha/holiday name | HebCal Shabbat API (`geonameid=281184`) |
+| Yom Tov ("high holiday") dates | HebCal main calendar API (`maj=on`, `i=on` for Israel day counts) |
 | Hebrew date | HebCal converter API |
 | News panel (Ynet) | rss2json.com proxy → Ynet RSS |
 | News ticker (Channel 14) | rss2json.com proxy → Channel 14 RSS |
@@ -68,24 +69,30 @@ The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-b
 - **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
 - **`toLocaleTimeString` may ignore `hour12: false`** — always pass `timeZone: 'Asia/Jerusalem'` alongside `hour12: false` in time formatting calls to ensure 24-hour IST display regardless of the TV's system timezone.
 
-## Shabbat mode
+## Shabbat mode (and Yom Tov / "high holiday" mode)
 
-Auto-activates 30 minutes before candle lighting every Friday; deactivates after havdalah Saturday night.
+Auto-activates 30 minutes before candle lighting every Friday; deactivates after havdalah Saturday night. The same overlay and the same trigger logic also activate for every Yom Tov day where melacha is forbidden — Rosh Hashana, Yom Kippur, Sukkot I, Shmini Atzeret/Simchat Torah, Pesach I & VII, Shavuot — but **not** Chol HaMoed or minor holidays (Hanukkah, Purim, etc.), which stay normal days.
 
-**What it shows:** Full-screen overlay with שבת שלום banner, פרשה name, live clock, date, weather, candle lighting time and havdalah time in large gold text. Background: `images/challah-shabbat.jpg` with a 55% dark overlay.
+**What it shows:** Full-screen overlay with a greeting banner (שבת שלום, or a holiday-specific greeting — see below), the parasha/chag name, live clock, date, weather, "candle lighting" time and an end-of-holy-day time in large gold text. Background: `images/challah-shabbat.jpg` with a 55% dark overlay (same image for Yom Tov — there's no dedicated chag photo yet).
 
-**Music:** pauses on entry, resumes after havdalah.
+**Music:** pauses on entry, resumes after the holy day ends.
+
+**Yom Tov time calculation** — same convention as Shabbat: candle lighting = sunset (evening before the chag starts) − 35 min, end of chag = sunset (on the chag's last day) + 42 min. This mirrors the Shabbat offsets but is **not independently verified** against a shul schedule for Yom Tov the way the Shabbat offsets are — revisit if congregants report it's off. `loadHolidayTimes()` fetches a rolling 120-day window from HebCal's main calendar API and groups consecutive Yom Tov days (e.g. Rosh Hashana I+II) into one block per chag. **Known simplification:** a chag directly adjoining Shabbat (e.g. Erev Sukkot on Motzei Shabbat, or Yom Tov running into Shabbat) is not merged into one halachically-continuous span — in practice the overlay still stays up continuously (the two windows' active ranges overlap), but the banner/label can flip between "chag" and "שבת" wording right at the boundary instead of showing a combined message.
+
+**Holiday greetings** (`greetingForHoliday()` in `app.js`): Rosh Hashana → "שנה טובה ומתוקה", Yom Kippur → "צום קל וגמר חתימה טובה", everything else (Sukkot, Simchat Torah, Pesach, Shavuot) → "חג שמח".
 
 **Key implementation details:**
-- Module-level vars: `shabbatTimes`, `shabbatModeActive`, `shabbatParasha`, `lobbyAudio`
-- `scheduleShabbatMode()` polls every 30s (registered once via `_shabbatModeInterval` guard)
+- Module-level vars: `shabbatTimes`, `shabbatParasha`, `holidayBlocks` (Yom Tov blocks), `shabbatModeActive`, `overlayInfo` (whichever of Shabbat/holiday is currently driving the overlay), `lobbyAudio`
+- `checkShabbatMode()` checks both `shabbatTimes` and `holidayBlocks` every 30s; a holiday takes priority over a concurrent Shabbat window in `overlayInfo`
+- `scheduleShabbatMode()` is called unconditionally on page load (not just after a successful fetch) so the 30s poll always runs even if the times/holiday API calls fail; registered once via `_shabbatModeInterval` guard
 - `title` (parasha) **must be declared before** `shabbatParasha = title` — TDZ pitfall
-- After times load, `updateShabbatOverlay()` is called again if overlay is already showing (race condition fix)
+- After Shabbat or holiday data (re)loads, `checkShabbatMode()` is called again to refresh `overlayInfo` if the overlay is already showing (race condition fix)
 - Overlay uses `position: absolute; top/right/bottom/left: 0; z-index: 100` — **do not use `inset` shorthand** (breaks on Fully Kiosk Browser)
 
 **To preview in browser console** (wait ~3 seconds after page load):
 ```js
-shabbatParasha = 'במדבר'; enterShabbatMode();
+shabbatParasha = 'במדבר'; enterShabbatMode();               // plain Shabbat overlay
+overlayInfo = { kind: 'holiday', candleTime: new Date(), havdalahTime: new Date(Date.now()+3600000), nameHe: 'ראש השנה', greeting: 'שנה טובה ומתוקה 🍯🍎' }; enterShabbatMode(); // holiday overlay
 ```
 
 ## Background images
