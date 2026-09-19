@@ -79,9 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHebrewDate();
   loadWeather();
   loadShabbatTimes();
+  loadHolidayTimes();
   loadNews();
   loadAnnouncements();
   startImageRotation();
+  scheduleShabbatMode(); // register the 30s check even if the times fetch above fails
 
   setInterval(loadWeather,       CONFIG.weatherRefreshMs);
   setInterval(loadNews,          CONFIG.newsRefreshMs);
@@ -163,7 +165,19 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// ── Shabbat times (candle lighting = sunset−35 min, havdalah = sunset+42 min) ─
+// "Three medium stars" tzeit hakochavim (8.5° below horizon) — used for Havdalah
+// and the end of a chag. Unlike a fixed number of minutes after sunset, this
+// tracks how twilight itself gets shorter near the equinoxes and longer near
+// the solstices at this latitude, so it stays accurate year-round.
+function endOfDayTime(zmanimTimes) {
+  const tzeit = zmanimTimes?.tzeit85deg;
+  if (tzeit) return new Date(tzeit);
+  // Fallback in case the API ever omits the degree-based zman
+  const sunset = zmanimTimes?.sunset;
+  return sunset ? new Date(new Date(sunset).getTime() + 42 * 60_000) : null;
+}
+
+// ── Shabbat times (candle lighting = sunset−35 min, havdalah = tzeit hakochavim) ─
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
@@ -197,22 +211,23 @@ async function loadShabbatTimes() {
     ]);
 
     const friSunset = friZ?.times?.sunset;
-    const satSunset = satZ?.times?.sunset;
-    if (!friSunset || !satSunset) throw new Error('Missing sunset times from Zmanim API');
+    if (!friSunset) throw new Error('Missing sunset from Zmanim API');
 
     const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60_000);
-    const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
+    const havdalahTime = endOfDayTime(satZ?.times);
+    if (!havdalahTime) throw new Error('Missing tzeit/sunset from Zmanim API');
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 
     const parasha = shabbatData.items.find(i => i.category === 'parashat');
     const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
-    const title   = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    const rawTitle = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    const title    = rawTitle ? stripHebrewOrdinal(rawTitle) : '';
 
     shabbatTimes = { candleTime, havdalahTime };
     shabbatParasha = title;
     scheduleShabbatMode();
-    if (shabbatModeActive) updateShabbatOverlay(); // refresh if overlay already showing
+    if (shabbatModeActive) checkShabbatMode(); // refresh overlay content if already showing
 
     if (isShabbat) {
       el.innerHTML = `
@@ -247,6 +262,87 @@ async function loadShabbatTimes() {
   next.setDate(now.getDate() + daysUntilSun);
   next.setHours(0, 5, 0, 0);
   setTimeout(loadShabbatTimes, next - now);
+}
+
+// ── Yom Tov ("high holiday") mode ─────────────────────────────────────────────
+// Same convention as Shabbat (candle = sunset−35min, end of chag = tzeit hakochavim
+// via endOfDayTime()), applied to every Yom Tov day where melacha is forbidden:
+// Rosh Hashana, Yom Kippur, Sukkot I, Shmini Atzeret/Simchat Torah, Pesach I & VII,
+// Shavuot — not just Chol HaMoed, which stays a normal day.
+let holidayBlocks = []; // [{ candleTime, havdalahTime, nameHe, greeting }]
+
+function greetingForHoliday(title) {
+  if (title.startsWith('Rosh Hashana')) return 'שנה טובה ומתוקה 🍯🍎';
+  if (title.startsWith('Yom Kippur'))   return 'צום קל וגמר חתימה טובה';
+  return 'חג שמח 🎉';
+}
+
+// Hebcal suffixes (and sometimes prefixes) multi-day chagim with a Hebrew ordinal,
+// e.g. "ראש השנה ב׳" or "א׳ סוכות" — drop it so the overlay just says "ראש השנה".
+function stripHebrewOrdinal(str) {
+  return str
+    .replace(/^[א-ת]['׳]\s*/, '')
+    .replace(/\s*[א-ת]['׳]$/, '');
+}
+
+async function loadHolidayTimes() {
+  try {
+    const today = new Date();
+    const rangeStart = new Date(today); rangeStart.setDate(today.getDate() - 3);
+    const rangeEnd   = new Date(today); rangeEnd.setDate(today.getDate() + 120);
+
+    const url = `https://www.hebcal.com/hebcal?cfg=json&v=1&maj=on&min=off&mod=off&nx=off&ss=off&mf=off&c=0&i=on` +
+      `&geonameid=${CONFIG.hebcalGeonameId}&start=${dateToLocalStr(rangeStart)}&end=${dateToLocalStr(rangeEnd)}`;
+    const data = await fetchJSON(url);
+
+    const yomtovDays = (data.items ?? [])
+      .filter(i => i.category === 'holiday' && i.yomtov)
+      .map(i => ({ date: parseLocalDateStr(i.date), title: i.title, hebrew: i.hebrew ?? i.title }))
+      .sort((a, b) => a.date - b.date);
+
+    // Group consecutive Yom Tov days (e.g. Rosh Hashana I+II) into one chag block.
+    // Uses UTC day numbers so DST transitions never break the "consecutive day" check.
+    const utcDayNum = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000);
+    const blocks = [];
+    for (const day of yomtovDays) {
+      const last = blocks[blocks.length - 1];
+      if (last && utcDayNum(day.date) - utcDayNum(last.lastDate) === 1) {
+        last.lastDate = day.date;
+        last.hebrewTitles.push(day.hebrew);
+      } else {
+        blocks.push({ firstDate: day.date, lastDate: day.date, titles: [day.title], hebrewTitles: [day.hebrew] });
+      }
+    }
+
+    const zmanimBase = `https://www.hebcal.com/zmanim?cfg=json&latitude=${CONFIG.lat}&longitude=${CONFIG.lon}&tzid=Asia%2FJerusalem`;
+    const resolved = await Promise.all(blocks.map(async block => {
+      const dayBefore = new Date(block.firstDate);
+      dayBefore.setDate(dayBefore.getDate() - 1);
+      const [beforeZ, lastZ] = await Promise.all([
+        fetchJSON(`${zmanimBase}&date=${dateToLocalStr(dayBefore)}`),
+        fetchJSON(`${zmanimBase}&date=${dateToLocalStr(block.lastDate)}`),
+      ]);
+      const beforeSunset = beforeZ?.times?.sunset;
+      const havdalahTime = endOfDayTime(lastZ?.times);
+      if (!beforeSunset || !havdalahTime) return null;
+      return {
+        candleTime: new Date(new Date(beforeSunset).getTime() - 35 * 60_000),
+        havdalahTime,
+        nameHe:   stripHebrewOrdinal(block.hebrewTitles[0]),
+        greeting: greetingForHoliday(block.titles[0]),
+      };
+    }));
+
+    holidayBlocks = resolved.filter(Boolean);
+    checkShabbatMode(); // re-evaluate immediately in case a chag is active right now
+  } catch { /* silent — holiday mode just won't trigger until the next daily refresh */ }
+
+  // Refresh once a day (data covers a 120-day rolling window)
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + 1);
+  next.setHours(0, 10, 0, 0);
+  setTimeout(loadHolidayTimes, next - now);
 }
 
 // ── News panel + ticker ────────────────────────────────────────────────────────
@@ -451,8 +547,9 @@ function startMusic() {
   });
 }
 
-// ── Shabbat mode ──────────────────────────────────────────────────────────────
+// ── Shabbat mode (also covers Yom Tov / "high holiday" blocks — see holidayBlocks) ─
 let _shabbatModeInterval = null;
+let overlayInfo = null; // { kind: 'shabbat'|'holiday', candleTime, havdalahTime, nameHe, greeting }
 
 function scheduleShabbatMode() {
   // Only register the interval once
@@ -461,24 +558,44 @@ function scheduleShabbatMode() {
   _shabbatModeInterval = setInterval(checkShabbatMode, 30_000);
 }
 
+function findActiveHoliday(now) {
+  return holidayBlocks.find(b =>
+    now >= b.candleTime.getTime() - 30 * 60_000 && now < b.havdalahTime.getTime());
+}
+
 function checkShabbatMode() {
-  const { candleTime, havdalahTime } = shabbatTimes;
-  if (!candleTime || !havdalahTime) return;
   const now = Date.now();
-  const active = now >= candleTime.getTime() - 30 * 60_000
-              && now < havdalahTime.getTime();
-  active ? enterShabbatMode() : exitShabbatMode();
+  const holiday = findActiveHoliday(now);
+  const { candleTime, havdalahTime } = shabbatTimes;
+  const shabbatActive = !!(candleTime && havdalahTime &&
+    now >= candleTime.getTime() - 30 * 60_000 && now < havdalahTime.getTime());
+
+  if (holiday) {
+    overlayInfo = { kind: 'holiday', ...holiday };
+    enterShabbatMode();
+  } else if (shabbatActive) {
+    overlayInfo = { kind: 'shabbat', candleTime, havdalahTime, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
+    enterShabbatMode();
+  } else {
+    exitShabbatMode();
+  }
 }
 
 function enterShabbatMode() {
+  // Manual console testing (see CLAUDE.md) calls this directly without going
+  // through checkShabbatMode(), so fall back to a plain Shabbat overlay.
+  if (!overlayInfo) {
+    overlayInfo = { kind: 'shabbat', ...shabbatTimes, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
+  }
+  updateShabbatOverlay();
   if (shabbatModeActive) return;
   shabbatModeActive = true;
-  updateShabbatOverlay();
   document.getElementById('shabbat-overlay').classList.add('visible');
   if (lobbyAudio) lobbyAudio.pause();
 }
 
 function exitShabbatMode() {
+  overlayInfo = null;
   if (!shabbatModeActive) return;
   shabbatModeActive = false;
   document.getElementById('shabbat-overlay').classList.remove('visible');
@@ -486,14 +603,19 @@ function exitShabbatMode() {
 }
 
 function updateShabbatOverlay() {
-  const { candleTime, havdalahTime } = shabbatTimes;
+  if (!overlayInfo) return;
+  const { candleTime, havdalahTime, nameHe, greeting, kind } = overlayInfo;
   if (!candleTime || !havdalahTime) return;
   const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
-  document.getElementById('shabbat-candle-time').textContent   = fmt(candleTime);
-  document.getElementById('shabbat-havdalah-time').textContent = fmt(havdalahTime);
+
+  document.getElementById('shabbat-shalom-banner').textContent  = greeting;
+  document.getElementById('shabbat-candle-time').textContent    = fmt(candleTime);
+  document.getElementById('shabbat-havdalah-time').textContent  = fmt(havdalahTime);
+  document.getElementById('shabbat-havdalah-label').textContent = kind === 'holiday' ? '✨ צאת החג' : '✨ הבדלה';
+
   const parashaEl = document.getElementById('shabbat-overlay-parasha');
-  parashaEl.textContent = shabbatParasha;
-  parashaEl.style.display = shabbatParasha ? '' : 'none';
+  parashaEl.textContent = nameHe || '';
+  parashaEl.style.display = nameHe ? '' : 'none';
 }
 
 function updateOverlayDate() {
@@ -508,6 +630,16 @@ async function fetchJSON(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+// Local (not UTC) date <-> 'YYYY-MM-DD' — avoids the UTC-midnight rollover bugs
+// that toISOString()/new Date(string) cause depending on the browser's timezone.
+function dateToLocalStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function parseLocalDateStr(s) {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 function escapeHtml(str = '') {
