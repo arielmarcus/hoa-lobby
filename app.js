@@ -165,7 +165,19 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// ── Shabbat times (candle lighting = sunset−35 min, havdalah = sunset+42 min) ─
+// "Three medium stars" tzeit hakochavim (8.5° below horizon) — used for Havdalah
+// and the end of a chag. Unlike a fixed number of minutes after sunset, this
+// tracks how twilight itself gets shorter near the equinoxes and longer near
+// the solstices at this latitude, so it stays accurate year-round.
+function endOfDayTime(zmanimTimes) {
+  const tzeit = zmanimTimes?.tzeit85deg;
+  if (tzeit) return new Date(tzeit);
+  // Fallback in case the API ever omits the degree-based zman
+  const sunset = zmanimTimes?.sunset;
+  return sunset ? new Date(new Date(sunset).getTime() + 42 * 60_000) : null;
+}
+
+// ── Shabbat times (candle lighting = sunset−35 min, havdalah = tzeit hakochavim) ─
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
@@ -199,11 +211,11 @@ async function loadShabbatTimes() {
     ]);
 
     const friSunset = friZ?.times?.sunset;
-    const satSunset = satZ?.times?.sunset;
-    if (!friSunset || !satSunset) throw new Error('Missing sunset times from Zmanim API');
+    if (!friSunset) throw new Error('Missing sunset from Zmanim API');
 
     const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60_000);
-    const havdalahTime = new Date(new Date(satSunset).getTime() + 42 * 60_000);
+    const havdalahTime = endOfDayTime(satZ?.times);
+    if (!havdalahTime) throw new Error('Missing tzeit/sunset from Zmanim API');
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 
@@ -253,10 +265,10 @@ async function loadShabbatTimes() {
 }
 
 // ── Yom Tov ("high holiday") mode ─────────────────────────────────────────────
-// Same sunset±offset convention as Shabbat (candle = sunset−35min, end of chag =
-// sunset+42min), applied to every Yom Tov day (the ones where melacha is forbidden:
+// Same convention as Shabbat (candle = sunset−35min, end of chag = tzeit hakochavim
+// via endOfDayTime()), applied to every Yom Tov day where melacha is forbidden:
 // Rosh Hashana, Yom Kippur, Sukkot I, Shmini Atzeret/Simchat Torah, Pesach I & VII,
-// Shavuot) — not just Chol HaMoed, which stays a normal day.
+// Shavuot — not just Chol HaMoed, which stays a normal day.
 let holidayBlocks = []; // [{ candleTime, havdalahTime, nameHe, greeting }]
 
 function greetingForHoliday(title) {
@@ -311,11 +323,11 @@ async function loadHolidayTimes() {
         fetchJSON(`${zmanimBase}&date=${dateToLocalStr(block.lastDate)}`),
       ]);
       const beforeSunset = beforeZ?.times?.sunset;
-      const lastSunset    = lastZ?.times?.sunset;
-      if (!beforeSunset || !lastSunset) return null;
+      const havdalahTime = endOfDayTime(lastZ?.times);
+      if (!beforeSunset || !havdalahTime) return null;
       return {
-        candleTime:   new Date(new Date(beforeSunset).getTime() - 35 * 60_000),
-        havdalahTime: new Date(new Date(lastSunset).getTime()   + 42 * 60_000),
+        candleTime: new Date(new Date(beforeSunset).getTime() - 35 * 60_000),
+        havdalahTime,
         nameHe:   stripHebrewOrdinal(block.hebrewTitles[0]),
         greeting: greetingForHoliday(block.titles[0]),
       };
