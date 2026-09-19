@@ -209,7 +209,8 @@ async function loadShabbatTimes() {
 
     const parasha = shabbatData.items.find(i => i.category === 'parashat');
     const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
-    const title   = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    const rawTitle = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    const title    = rawTitle ? stripHebrewOrdinal(rawTitle) : '';
 
     shabbatTimes = { candleTime, havdalahTime };
     shabbatParasha = title;
@@ -264,9 +265,12 @@ function greetingForHoliday(title) {
   return 'חג שמח 🎉';
 }
 
-// Hebcal prefixes multi-day chagim with a Hebrew ordinal, e.g. "א׳ ראש השנה" — drop it.
+// Hebcal suffixes (and sometimes prefixes) multi-day chagim with a Hebrew ordinal,
+// e.g. "ראש השנה ב׳" or "א׳ סוכות" — drop it so the overlay just says "ראש השנה".
 function stripHebrewOrdinal(str) {
-  return str.replace(/^[א-ת]['׳]\s*/, '');
+  return str
+    .replace(/^[א-ת]['׳]\s*/, '')
+    .replace(/\s*[א-ת]['׳]$/, '');
 }
 
 async function loadHolidayTimes() {
