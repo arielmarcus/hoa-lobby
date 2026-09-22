@@ -92,6 +92,10 @@
     </div>
 
   </div>
-  <script src="app.js"></script>
+  <script>
+    // Cache-bust on every load — a bare <script src="app.js"> lets a WebView
+    // (like Fully Kiosk Browser's) cache app.js indefinitely and never see updates.
+    document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
+  </script>
 </body>
 </html>
