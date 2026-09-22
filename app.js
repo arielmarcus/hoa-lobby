@@ -255,8 +255,14 @@ async function loadShabbatTimes() {
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 
-    const parasha = shabbatData.items.find(i => i.category === 'parashat');
-    const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov);
+    // Guard against a stale response still containing a holiday that has already
+    // ended (e.g. Yom Kippur lingering in the title for days after it's over) —
+    // only ever show a holiday/parasha whose date hasn't passed yet.
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const isUpcoming = i => i.date && parseLocalDateStr(i.date.slice(0, 10)) >= todayMidnight;
+
+    const parasha = shabbatData.items.find(i => i.category === 'parashat' && isUpcoming(i));
+    const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov && isUpcoming(i));
     const rawTitle = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
     const title    = rawTitle ? stripHebrewOrdinal(rawTitle) : '';
 
@@ -291,11 +297,13 @@ async function loadShabbatTimes() {
     el.innerHTML = '<span class="loading">הזמנים אינם זמינים</span>';
   }
 
-  // Refresh next Sunday
+  // Refresh daily (not just weekly) — a holiday can start and fully end within a
+  // single week, and a weekly-only refresh left the title stuck on it for days
+  // after it was over even though the isUpcoming() filter above alone would
+  // eventually self-correct; refreshing daily catches it much sooner.
   const now = new Date();
-  const daysUntilSun = (7 - now.getDay()) % 7 || 7;
   const next = new Date(now);
-  next.setDate(now.getDate() + daysUntilSun);
+  next.setDate(now.getDate() + 1);
   next.setHours(0, 5, 0, 0);
   setTimeout(loadShabbatTimes, next - now);
 }
