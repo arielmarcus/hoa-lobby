@@ -88,7 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(loadWeather,       CONFIG.weatherRefreshMs);
   setInterval(loadNews,          CONFIG.newsRefreshMs);
   setInterval(loadAnnouncements, CONFIG.announcementsRefreshMs);
-  setTimeout(() => location.reload(), CONFIG.pageReloadMs);
+  // Navigate to a cache-busted URL rather than location.reload() — a plain reload
+  // can be satisfied entirely from a WebView's cache (see index.html's app.js
+  // loading for the same issue), silently freezing the lobby screen on old code.
+  setTimeout(() => {
+    location.href = location.pathname + '?t=' + Date.now();
+  }, CONFIG.pageReloadMs);
 
   startMusic();
 });
