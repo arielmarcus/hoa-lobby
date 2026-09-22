@@ -165,17 +165,50 @@ async function loadWeather() {
   } catch { /* leave previous value */ }
 }
 
-// Motzei Shabbos/chag = candle lighting + 25h10m (per day of the holy day) — this
-// shul's real printed rule, not a sunset-based calculation. Confirmed against the
-// shul's own PDFs for four separate weeks/holidays (a regular Shabbat, Yom Kippur,
-// Sukkot, and Shmini Atzeret/Simchat Torah), all matching within 0–1 minute. Two
-// earlier attempts (a fixed "sunset+42min" and HebCal's degree-based "tzeit85deg")
-// were each off by several minutes — see CLAUDE.md for why.
-function endOfHolyDay(candleTime, numDays = 1) {
-  return new Date(candleTime.getTime() + (numDays * 24 * 60 + 70) * 60_000);
+// Havdalah / end-of-chag = the moment the sun is 8.5° below the horizon ("tzeit
+// hakochavim", three medium stars) on the LAST day of Shabbat/the chag. This is
+// computed directly with solar-position trig rather than trusting a HebCal Zmanim
+// field name we can't verify live (an earlier guess at "tzeit85deg" from the API
+// was ~7 min off — either the wrong field, or a different definition of the zman).
+// A fixed "sunset+42min"/"candle+25h10m" offset was also tried and matched a
+// cluster of Sept–Oct PDFs, but a fixed offset can't be right: June PDFs need a
+// ~43min gap vs. ~35–36min in Sept/Oct, because twilight itself is longer near the
+// summer solstice than near the autumn equinox at this latitude. 8.5° matches all
+// six of the shul's real PDFs (two in June, four in Sept/Oct) within 0–2 minutes —
+// see CLAUDE.md for the full data. Sanity-checked against the `astral` Python
+// library's own dusk() calculation before porting this trig to JS.
+const JERUSALEM_LAT_RAD = CONFIG.lat * Math.PI / 180;
+const APPARENT_SUNSET_ELEVATION_DEG = -0.833; // standard refraction + solar-radius correction
+const TZEIT_DEPRESSION_DEG = 8.5;             // "three medium stars"
+
+function solarDeclinationRad(date) {
+  const startOfYear = new Date(date.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((date - startOfYear) / 86_400_000);
+  const gamma = (2 * Math.PI / 365) * (dayOfYear - 1);
+  return 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma)
+       - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma)
+       - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
 }
 
-// ── Shabbat times (candle lighting = sunset−35 min, havdalah = candle + 25h10m) ─
+function hourAngleDeg(elevationDeg, declinationRad) {
+  const elevRad = elevationDeg * Math.PI / 180;
+  const cosH = (Math.sin(elevRad) - Math.sin(JERUSALEM_LAT_RAD) * Math.sin(declinationRad))
+             / (Math.cos(JERUSALEM_LAT_RAD) * Math.cos(declinationRad));
+  return Math.acos(Math.max(-1, Math.min(1, cosH))) * 180 / Math.PI;
+}
+
+function minutesAfterSunsetForTzeit(date) {
+  const dec = solarDeclinationRad(date);
+  const h0  = hourAngleDeg(APPARENT_SUNSET_ELEVATION_DEG, dec);
+  const h1  = hourAngleDeg(-TZEIT_DEPRESSION_DEG, dec);
+  return (h1 - h0) * 4; // 4 minutes of time per degree of hour angle
+}
+
+function endOfHolyDay(sunset, date) {
+  return new Date(new Date(sunset).getTime() + minutesAfterSunsetForTzeit(date) * 60_000);
+}
+
+// ── Shabbat times (candle lighting = sunset−35 min, havdalah = 8.5° tzeit) ─────
 async function loadShabbatTimes() {
   const el = document.getElementById('shabbat-content');
   try {
@@ -184,7 +217,7 @@ async function loadShabbatTimes() {
     const isShabbat     = dow === 6;
     const isErevShabbat = dow === 5;
 
-    // Find the relevant Friday
+    // Find the relevant Friday and Saturday dates
     const friday = new Date(now);
     if (dow === 6) {
       friday.setDate(now.getDate() - 1);         // yesterday
@@ -192,6 +225,8 @@ async function loadShabbatTimes() {
       const daysAhead = (5 - dow + 7) % 7;
       friday.setDate(now.getDate() + daysAhead);
     }
+    const saturday = new Date(friday);
+    saturday.setDate(friday.getDate() + 1);
 
     // Use local date parts to avoid UTC midnight rollover issues
     const localDate = d =>
@@ -199,17 +234,19 @@ async function loadShabbatTimes() {
 
     const zmanimBase = `https://www.hebcal.com/zmanim?cfg=json&latitude=${CONFIG.lat}&longitude=${CONFIG.lon}&tzid=Asia%2FJerusalem`;
 
-    // Fetch Friday's sunset (for candle lighting) and the parasha in parallel
-    const [friZ, shabbatData] = await Promise.all([
+    // Fetch sunset for Friday + Saturday and the parasha in parallel
+    const [friZ, satZ, shabbatData] = await Promise.all([
       fetchJSON(`${zmanimBase}&date=${localDate(friday)}`),
+      fetchJSON(`${zmanimBase}&date=${localDate(saturday)}`),
       fetchJSON(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${CONFIG.hebcalGeonameId}&leyning=off`),
     ]);
 
     const friSunset = friZ?.times?.sunset;
-    if (!friSunset) throw new Error('Missing sunset from Zmanim API');
+    const satSunset = satZ?.times?.sunset;
+    if (!friSunset || !satSunset) throw new Error('Missing sunset from Zmanim API');
 
     const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60_000);
-    const havdalahTime = endOfHolyDay(candleTime);
+    const havdalahTime = endOfHolyDay(satSunset, saturday);
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 
@@ -259,10 +296,10 @@ async function loadShabbatTimes() {
 }
 
 // ── Yom Tov ("high holiday") mode ─────────────────────────────────────────────
-// Same convention as Shabbat (candle = sunset−35min, end of chag = endOfHolyDay(),
-// i.e. candle + 25h10m per day in the block), applied to every Yom Tov day where
-// melacha is forbidden: Rosh Hashana, Yom Kippur, Sukkot I, Shmini Atzeret/Simchat
-// Torah, Pesach I & VII, Shavuot — not just Chol HaMoed, which stays a normal day.
+// Same convention as Shabbat (candle = sunset−35min, end of chag = endOfHolyDay()'s
+// 8.5° tzeit on the block's last day), applied to every Yom Tov day where melacha
+// is forbidden: Rosh Hashana, Yom Kippur, Sukkot I, Shmini Atzeret/Simchat Torah,
+// Pesach I & VII, Shavuot — not just Chol HaMoed, which stays a normal day.
 let holidayBlocks = []; // [{ candleTime, havdalahTime, nameHe, greeting }]
 
 function greetingForHoliday(title) {
@@ -312,14 +349,17 @@ async function loadHolidayTimes() {
     const resolved = await Promise.all(blocks.map(async block => {
       const dayBefore = new Date(block.firstDate);
       dayBefore.setDate(dayBefore.getDate() - 1);
-      const beforeZ = await fetchJSON(`${zmanimBase}&date=${dateToLocalStr(dayBefore)}`);
+      const [beforeZ, lastZ] = await Promise.all([
+        fetchJSON(`${zmanimBase}&date=${dateToLocalStr(dayBefore)}`),
+        fetchJSON(`${zmanimBase}&date=${dateToLocalStr(block.lastDate)}`),
+      ]);
       const beforeSunset = beforeZ?.times?.sunset;
-      if (!beforeSunset) return null;
+      const lastSunset    = lastZ?.times?.sunset;
+      if (!beforeSunset || !lastSunset) return null;
       const candleTime = new Date(new Date(beforeSunset).getTime() - 35 * 60_000);
-      const numDays = utcDayNum(block.lastDate) - utcDayNum(block.firstDate) + 1;
       return {
         candleTime,
-        havdalahTime: endOfHolyDay(candleTime, numDays),
+        havdalahTime: endOfHolyDay(lastSunset, block.lastDate),
         nameHe:   stripHebrewOrdinal(block.hebrewTitles[0]),
         greeting: greetingForHoliday(block.titles[0]),
       };
