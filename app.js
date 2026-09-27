@@ -27,6 +27,7 @@ const CONFIG = {
   // Candle lighting and havdalah are now calculated from sunset — see loadShabbatTimes()
   newsPanelUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',  // side panel with images
   newsTickerUrl: 'https://www.c14.co.il/feed/',                       // bottom ticker
+  rssProxyUrl: 'https://hoa-lobby-rss.arielmarcus18.workers.dev',     // worker/rss-proxy.js
   imageRotateMs: 30_000,
   weatherRefreshMs:       10 * 60_000,
   newsRefreshMs:          15 * 60_000,
@@ -400,41 +401,71 @@ async function loadNews() {
 
 async function loadNewsPanel() {
   try {
-    // rss2json works reliably with Ynet and preserves description HTML (for images)
-    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsPanelUrl)}`;
-    const data = await fetchJSON(url);
-    if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
-
-    const items = data.items.map(i => ({
-      title:   i.title?.trim() ?? '',
-      pubDate: i.pubDate ?? '',
-      image:   i.thumbnail || extractImgFromHtml(i.description ?? ''),
-    })).filter(i => i.title);
-
-    renderNewsPanel(items);
+    renderNewsPanel(await fetchFeed('ynet', CONFIG.newsPanelUrl));
   } catch {
     document.getElementById('news-list').innerHTML = '<div class="loading" style="padding:16px">החדשות אינן זמינות</div>';
   }
 }
 
-function extractImgFromHtml(html) {
-  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  return m ? m[1] : null;
-}
-
 async function loadNewsTicker() {
   try {
-    const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsTickerUrl)}`;
-    const data = await fetchJSON(url);
-    if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
-    const items = data.items.map(i => ({
-      title:   i.title?.trim() ?? '',
-      pubDate: i.pubDate ?? '',
-    })).filter(i => i.title);
-    renderTicker(items);
+    renderTicker(await fetchFeed('c14', CONFIG.newsTickerUrl));
   } catch {
     document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
   }
+}
+
+// Feeds come through our own Cloudflare Worker (worker/rss-proxy.js), which is
+// current to within ~5 min. rss2json is only a fallback: its free tier serves
+// cached copies that can lag the source by hours.
+async function fetchFeed(proxyKey, feedUrl) {
+  try {
+    return await fetchFeedViaProxy(proxyKey);
+  } catch {
+    return fetchFeedViaRss2json(feedUrl);
+  }
+}
+
+async function fetchFeedViaProxy(key) {
+  const res = await fetch(`${CONFIG.rssProxyUrl}/${key}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const xml = new DOMParser().parseFromString(await res.text(), 'text/xml');
+  if (xml.querySelector('parsererror')) throw new Error('XML parse error');
+  const items = Array.from(xml.querySelectorAll('item')).map(el => ({
+    title:   el.querySelector('title')?.textContent?.trim() ?? '',
+    pubDate: el.querySelector('pubDate')?.textContent?.trim() ?? '',
+    image:   extractRSSImage(el),
+  })).filter(i => i.title);
+  if (!items.length) throw new Error('empty feed');
+  return items;
+}
+
+async function fetchFeedViaRss2json(feedUrl) {
+  const data = await fetchJSON(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+  if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
+  return data.items.map(i => ({
+    title:   i.title?.trim() ?? '',
+    pubDate: i.pubDate ?? '',
+    image:   i.thumbnail || extractImgFromHtml(i.description ?? ''),
+  })).filter(i => i.title);
+}
+
+function extractRSSImage(el) {
+  const media = el.getElementsByTagName('media:content')[0];
+  if (media?.getAttribute('url')) return media.getAttribute('url');
+
+  const enclosure = el.querySelector('enclosure');
+  const encUrl  = enclosure?.getAttribute('url') ?? '';
+  const encType = enclosure?.getAttribute('type') ?? '';
+  if (encUrl && (encType.startsWith('image') || /\.(jpe?g|png|webp|gif)/i.test(encUrl))) return encUrl;
+
+  // Ynet puts its thumbnail in an <img> inside the description HTML
+  return extractImgFromHtml(el.querySelector('description')?.textContent ?? '');
+}
+
+function extractImgFromHtml(html) {
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1] : null;
 }
 
 function formatPubTime(pubDateStr) {

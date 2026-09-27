@@ -14,4 +14,4 @@ Hard rules, in case the reference above isn't loaded:
 - Always pass `timeZone: 'Asia/Jerusalem'` when formatting times.
 - Havdalah/end-of-chag is computed with 8.5° solar trig (`TZEIT_DEPRESSION_DEG` in `app.js`). Do not replace it with a fixed minutes-after-sunset offset or a HebCal field.
 - Music must never play while the Shabbat/Yom Tov overlay is active.
-- News feeds go through rss2json, whose `pubDate` is UTC without a zone marker — parse it as UTC (see `formatPubTime()`).
+- News feeds go through the Cloudflare Worker in `worker/rss-proxy.js` (rss2json is only a fallback). Pushing to GitHub does NOT deploy the Worker — it must be pasted into the Cloudflare dashboard.
