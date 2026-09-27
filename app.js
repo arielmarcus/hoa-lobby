@@ -34,7 +34,7 @@ const CONFIG = {
   pageReloadMs:           30 * 60_000,
 };
 
-// Background images — replace paths with your own photos, e.g. 'images/spring/lobby.jpg'
+// Background images — list photos from images/, e.g. 'images/lobby.jpg'
 const IMAGES = [
   'images/building.jpg',
   'images/jerusalem1.jpg',
@@ -78,8 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
   updateGregorianDate();
   loadHebrewDate();
   loadWeather();
-  loadShabbatTimes();
-  loadHolidayTimes();
+  // Start music only once Shabbat/Yom Tov data has loaded — otherwise a reload
+  // during Shabbat plays music until the overlay activates. Both loaders catch
+  // their own errors, so this still starts music if the APIs are down.
+  Promise.all([loadShabbatTimes(), loadHolidayTimes()]).then(startMusic, startMusic);
   loadNews();
   loadAnnouncements();
   startImageRotation();
@@ -94,8 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     location.href = location.pathname + '?t=' + Date.now();
   }, CONFIG.pageReloadMs);
-
-  startMusic();
 });
 
 // ── Clock ─────────────────────────────────────────────────────────────────────
@@ -269,7 +269,10 @@ async function loadShabbatTimes() {
     shabbatTimes = { candleTime, havdalahTime };
     shabbatParasha = title;
     scheduleShabbatMode();
-    if (shabbatModeActive) checkShabbatMode(); // refresh overlay content if already showing
+    // Always re-check, not just when the overlay is already showing: after a
+    // page reload during Shabbat, waiting for the next 30s tick leaves the
+    // normal screen (and music) up until then.
+    checkShabbatMode();
 
     if (isShabbat) {
       el.innerHTML = `
@@ -526,7 +529,7 @@ async function loadAnnouncements() {
     if (!data.length) throw new Error('empty');
     el.innerHTML = data.slice(0, 3).map(item => `
       <div class="announcement">
-        ${escapeHtml(item.text)}
+        <div class="announcement-text">${escapeHtml(item.text)}</div>
         ${item.date ? `<div class="announcement-date">${escapeHtml(item.date)}</div>` : ''}
       </div>
     `).join('');
@@ -579,10 +582,15 @@ function startMusic() {
 
   audio.addEventListener('ended', playNext);
 
-  // Try immediately; if blocked by autoplay policy, retry on first interaction
+  // Load the first track, but don't start it during Shabbat/Yom Tov —
+  // exitShabbatMode() resumes playback when the holy day ends.
   audio.src = queue[idx++];
+  if (shabbatModeActive) return;
+
+  // Try immediately; if blocked by autoplay policy, retry on first interaction
   audio.play().catch(() => {
     const resume = () => {
+      if (shabbatModeActive) return; // a touch during Shabbat must not start music
       audio.play().catch(() => {});
       document.removeEventListener('click', resume);
       document.removeEventListener('keydown', resume);

@@ -6,7 +6,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>קרן היסוד 5</title>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400;600;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <script>
+    // Cache-bust style.css for the same reason as app.js below — otherwise the
+    // WebView can keep serving an old stylesheet after a deploy.
+    document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');
+  </script>
 </head>
 <body>
   <div id="app">

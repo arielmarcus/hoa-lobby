@@ -292,6 +292,9 @@ html, body {
 
 .announcement:last-child { border-bottom: none; padding-bottom: 0; }
 
+/* Keep line breaks typed in the admin portal (numbered lists, paragraphs) */
+.announcement-text { white-space: pre-line; }
+
 .announcement-date {
   font-size: 14px;
   color: var(--text-muted);

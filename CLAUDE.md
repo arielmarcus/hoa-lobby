@@ -24,7 +24,7 @@ Or use the `/preview` skill in Claude Code (launch config is at `~/.claude/launc
 
 ## Updating announcements
 
-Use the `/lobby-announce` project command (interactive), or edit `announcements.json` directly and push. Up to 3 shown; format:
+Use the admin portal (`admin.html`, needs a fine-grained GitHub token limited to this repo with Contents: Read and write), the `/lobby-announce` Claude Code command, or edit `announcements.json` directly and push. Up to 3 shown; line breaks in `text` are preserved on screen (`.announcement-text { white-space: pre-line }`). The lobby re-fetches announcements every 5 min. Format:
 ```json
 [{ "text": "...", "date": "..." }]
 ```
@@ -71,6 +71,7 @@ The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-b
 - **No CSS `inset` shorthand** — use explicit `top: 0; right: 0; bottom: 0; left: 0` instead. Using `inset` will silently collapse absolutely-positioned elements to 0×0.
 - **No spaces or parentheses in asset filenames** — the browser fails to load URLs with spaces even when URL-encoded in CSS/JS.
 - **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
+- **Aggressive caching** — the WebView can serve stale assets indefinitely. `index.html` loads both `app.js` and `style.css` through `document.write` with `?v=Date.now()`; keep any new frequently-changed asset cache-busted the same way.
 - **`toLocaleTimeString` may ignore `hour12: false`** — always pass `timeZone: 'Asia/Jerusalem'` alongside `hour12: false` in time formatting calls to ensure 24-hour IST display regardless of the TV's system timezone.
 
 ## Shabbat mode (and Yom Tov / "high holiday" mode)
@@ -79,7 +80,7 @@ Auto-activates 30 minutes before candle lighting every Friday; deactivates after
 
 **What it shows:** Full-screen overlay with a greeting banner (שבת שלום, or a holiday-specific greeting — see below), the parasha/chag name, live clock, date, weather, "candle lighting" time and an end-of-holy-day time in large gold text. Background: `images/challah-shabbat.jpg` with a 55% dark overlay (same image for Yom Tov — there's no dedicated chag photo yet).
 
-**Music:** pauses on entry, resumes after the holy day ends.
+**Music:** pauses on entry, resumes after the holy day ends. `startMusic()` only runs once both `loadShabbatTimes()` and `loadHolidayTimes()` have settled, and never starts playback while the overlay is active — including the tap-to-play fallback used when autoplay is blocked.
 
 **Yom Tov time calculation** — same convention as Shabbat: candle lighting = sunset (evening before the chag starts) − 35 min, end of chag = `endOfHolyDay(lastDaySunset, lastDate)`'s 8.5° tzeit computed for the block's **last** day specifically (not derived from the first day + a day count — each block fetches its own last-day sunset from Zmanim so the seasonal trig is evaluated on the correct calendar date). This is **verified** against the shul's own PDFs for Yom Kippur (1 day) and Sukkot/Shmini Atzeret-Simchat Torah (each treated as 1 day in Israel) — all matched within 0–2 minutes. The 2+-day case (Rosh Hashana) is *not* independently verified since no PDF for it was available, but it's the same per-day-computed formula that nailed every single-day case, so it should hold. `loadHolidayTimes()` fetches a rolling 120-day window from HebCal's main calendar API and groups consecutive Yom Tov days (e.g. Rosh Hashana I+II) into one block per chag. **Known simplification:** a chag directly adjoining Shabbat (e.g. Erev Sukkot on Motzei Shabbat, or Yom Tov running into Shabbat) is not merged into one halachically-continuous span — in practice the overlay still stays up continuously (the two windows' active ranges overlap), but the banner/label can flip between "chag" and "שבת" wording right at the boundary instead of showing a combined message.
 
@@ -90,7 +91,7 @@ Auto-activates 30 minutes before candle lighting every Friday; deactivates after
 - `checkShabbatMode()` checks both `shabbatTimes` and `holidayBlocks` every 30s; a holiday takes priority over a concurrent Shabbat window in `overlayInfo`
 - `scheduleShabbatMode()` is called unconditionally on page load (not just after a successful fetch) so the 30s poll always runs even if the times/holiday API calls fail; registered once via `_shabbatModeInterval` guard
 - `title` (parasha) **must be declared before** `shabbatParasha = title` — TDZ pitfall
-- After Shabbat or holiday data (re)loads, `checkShabbatMode()` is called again to refresh `overlayInfo` if the overlay is already showing (race condition fix)
+- After Shabbat or holiday data (re)loads, `checkShabbatMode()` is **always** called — not only when the overlay is already showing. Otherwise a page reload during Shabbat leaves the normal screen up until the next 30s tick.
 - Overlay uses `position: absolute; top/right/bottom/left: 0; z-index: 100` — **do not use `inset` shorthand** (breaks on Fully Kiosk Browser)
 
 **To preview in browser console** (wait ~3 seconds after page load):
