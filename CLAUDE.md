@@ -33,7 +33,7 @@ Use the admin portal (`admin.html`, needs a fine-grained GitHub token limited to
 
 Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all logic).
 
-**Layout** — fixed 1920×1080 canvas scaled to fit any screen via `scaleToFit()` in `app.js`. Uses `position: fixed; transform-origin: top left` with explicit `left`/`top` offset calculation — do not revert to the flex-centering approach, which clips the right sidebar on Android TV. Three-column RTL grid inside a header + main + footer:
+**Layout** — fixed 1920×1080 canvas scaled to fit any screen via `scaleToFit()` in `index.html` (plain ES5, not `app.js`). It has to live outside `app.js`: if that file fails to parse, the canvas stays 1920px and the TV shows only the top-left corner. Uses `position: fixed; transform-origin: top left` with explicit `left`/`top` offset calculation — do not revert to the flex-centering approach, which clips the right sidebar on Android TV. Three-column RTL grid inside a header + main + footer:
 - Right sidebar: Shabbat times + building announcements panels
 - Center: rotating background images
 - Left: slow-scrolling Ynet news panel with thumbnails
@@ -69,6 +69,8 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 The lobby TV runs Fully Kiosk Browser on Android, which uses an older Chromium-based WebView. Known constraints:
 
 - **No CSS `inset` shorthand** — use explicit `top: 0; right: 0; bottom: 0; left: 0` instead. Using `inset` will silently collapse absolutely-positioned elements to 0×0.
+- **No flexbox `gap`** — Chrome only added it in version 84. Spacing uses sibling margins (`> * + *`) instead.
+- **`app.js` must stay parseable by older Chrome** — no optional chaining (`?.`), nullish coalescing (`??`), numeric separators (`30_000`), object spread, or `catch {` with no binding. Any of those is a syntax error, the whole file is skipped, and the screen stays on the static header with an empty news box. `padStart` is also missing there; use `pad2()`.
 - **No spaces or parentheses in asset filenames** — the browser fails to load URLs with spaces even when URL-encoded in CSS/JS.
 - **Autoplay audio may be blocked** — `startMusic()` gracefully defers to first user interaction if autoplay is denied.
 - **Aggressive caching** — the WebView can serve stale assets indefinitely. `index.html` loads both `app.js` and `style.css` through `document.write` with `?v=Date.now()`; keep any new frequently-changed asset cache-busted the same way.

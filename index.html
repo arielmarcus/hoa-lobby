@@ -97,6 +97,32 @@
 
   </div>
   <script>
+    // Fit the 1920×1080 canvas with syntax old Chrome can run. This has to live
+    // here, not only in app.js: if app.js fails to parse, nothing else scales
+    // the page and the TV shows a clipped blank corner.
+    function scaleToFit() {
+      var vv = window.visualViewport;
+      var w = (vv && vv.width) || window.innerWidth || document.documentElement.clientWidth;
+      var h = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight;
+      if (!w || !h) return;
+      var scale = Math.min(w / 1920, h / 1080);
+      var app = document.getElementById('app');
+      if (!app) return;
+      var x = (w - 1920 * scale) / 2 + (vv ? vv.offsetLeft || 0 : 0);
+      var y = (h - 1080 * scale) / 2 + (vv ? vv.offsetTop || 0 : 0);
+      app.style.transform = 'scale(' + scale + ')';
+      app.style.left = x + 'px';
+      app.style.top = y + 'px';
+    }
+    scaleToFit();
+    window.addEventListener('resize', scaleToFit);
+    window.addEventListener('orientationchange', scaleToFit);
+    window.addEventListener('load', scaleToFit);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', scaleToFit);
+    setTimeout(scaleToFit, 300);
+    setTimeout(scaleToFit, 1000);
+  </script>
+  <script>
     // Cache-bust on every load — a bare <script src="app.js"> lets a WebView
     // (like Fully Kiosk Browser's) cache app.js indefinitely and never see updates.
     document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');

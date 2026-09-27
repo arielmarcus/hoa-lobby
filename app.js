@@ -1,3 +1,12 @@
+// Lobby Chrome is old. This file must keep parsing there: no optional chaining,
+// nullish coalescing, numeric separators, or a catch with no binding.
+// A syntax error skips the whole script, so the screen stays blank and unscaled.
+
+function pad2(n) {
+  var s = String(n);
+  return s.length < 2 ? '0' + s : s;
+}
+
 // ── Music tracks ──────────────────────────────────────────────────────────────
 const MUSIC_TRACKS = [
   'Music/atlasaudio-ambient-astronomy-511860.mp3',
@@ -28,11 +37,11 @@ const CONFIG = {
   newsPanelUrl: 'https://www.ynet.co.il/Integration/StoryRss2.xml',  // side panel with images
   newsTickerUrl: 'https://www.c14.co.il/feed/',                       // bottom ticker
   rssProxyUrl: 'https://hoa-lobby-rss.arielmarcus18.workers.dev',     // worker/rss-proxy.js
-  imageRotateMs: 30_000,
-  weatherRefreshMs:       10 * 60_000,
-  newsRefreshMs:          15 * 60_000,
-  announcementsRefreshMs:  5 * 60_000,
-  pageReloadMs:           30 * 60_000,
+  imageRotateMs: 30000,
+  weatherRefreshMs:       10 * 60000,
+  newsRefreshMs:          15 * 60000,
+  announcementsRefreshMs:  5 * 60000,
+  pageReloadMs:           30 * 60000,
 };
 
 // Background images — list photos from images/, e.g. 'images/lobby.jpg'
@@ -105,9 +114,9 @@ function startClock() {
   const elOverlay = document.getElementById('shabbat-overlay-clock');
   function tick() {
     const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
+    const h = pad2(now.getHours());
+    const m = pad2(now.getMinutes());
+    const s = pad2(now.getSeconds());
     const timeStr = `${h}:${m}:${s}`;
     el.textContent = timeStr;
     elOverlay.textContent = timeStr;
@@ -141,11 +150,11 @@ async function loadHebrewDate() {
   try {
     const url = `https://www.hebcal.com/converter?cfg=json&gy=${now.getFullYear()}&gm=${now.getMonth() + 1}&gd=${now.getDate()}&g2h=1`;
     const data = await fetchJSON(url);
-    const hebStr = data.hebrew ?? '';
+    const hebStr = data.hebrew || '';
     document.getElementById('hebrew-date').textContent = hebStr;
     document.getElementById('shabbat-overlay-date').dataset.heb = hebStr;
     updateOverlayDate();
-  } catch { /* silent */ }
+  } catch (e) { /* silent */ }
 
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -160,7 +169,7 @@ async function loadWeather() {
       `&current=temperature_2m,apparent_temperature,weathercode,windspeed_10m&timezone=auto`;
     const data = await fetchJSON(url);
     const c   = data.current;
-    const wmo = WMO[c.weathercode] ?? { label: '', icon: '🌡️' };
+    const wmo = WMO[c.weathercode] || { label: '', icon: '🌡️' };
 
     document.getElementById('weather-icon-mini').textContent = wmo.icon;
     document.getElementById('weather-temp-mini').textContent = `${Math.round(c.temperature_2m)}°`;
@@ -168,7 +177,7 @@ async function loadWeather() {
       `${wmo.label} · מרגיש ${Math.round(c.apparent_temperature)}°`;
     document.getElementById('shabbat-overlay-weather').textContent =
       `${wmo.icon}  ${Math.round(c.temperature_2m)}°  ${wmo.label}`;
-  } catch { /* leave previous value */ }
+  } catch (e) { /* leave previous value */ }
 }
 
 // Havdalah / end-of-chag = the moment the sun is 8.5° below the horizon ("tzeit
@@ -189,7 +198,7 @@ const TZEIT_DEPRESSION_DEG = 8.5;             // "three medium stars"
 
 function solarDeclinationRad(date) {
   const startOfYear = new Date(date.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((date - startOfYear) / 86_400_000);
+  const dayOfYear = Math.floor((date - startOfYear) / 86400000);
   const gamma = (2 * Math.PI / 365) * (dayOfYear - 1);
   return 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma)
        - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma)
@@ -211,7 +220,7 @@ function minutesAfterSunsetForTzeit(date) {
 }
 
 function endOfHolyDay(sunset, date) {
-  return new Date(new Date(sunset).getTime() + minutesAfterSunsetForTzeit(date) * 60_000);
+  return new Date(new Date(sunset).getTime() + minutesAfterSunsetForTzeit(date) * 60000);
 }
 
 // ── Shabbat times (candle lighting = sunset−35 min, havdalah = 8.5° tzeit) ─────
@@ -236,7 +245,7 @@ async function loadShabbatTimes() {
 
     // Use local date parts to avoid UTC midnight rollover issues
     const localDate = d =>
-      `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
     const zmanimBase = `https://www.hebcal.com/zmanim?cfg=json&latitude=${CONFIG.lat}&longitude=${CONFIG.lon}&tzid=Asia%2FJerusalem`;
 
@@ -247,11 +256,11 @@ async function loadShabbatTimes() {
       fetchJSON(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${CONFIG.hebcalGeonameId}&leyning=off`),
     ]);
 
-    const friSunset = friZ?.times?.sunset;
-    const satSunset = satZ?.times?.sunset;
+    const friSunset = friZ && friZ.times && friZ.times.sunset;
+    const satSunset = satZ && satZ.times && satZ.times.sunset;
     if (!friSunset || !satSunset) throw new Error('Missing sunset from Zmanim API');
 
-    const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60_000);
+    const candleTime   = new Date(new Date(friSunset).getTime() - 35 * 60000);
     const havdalahTime = endOfHolyDay(satSunset, saturday);
 
     const fmt = d => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
@@ -264,7 +273,10 @@ async function loadShabbatTimes() {
 
     const parasha = shabbatData.items.find(i => i.category === 'parashat' && isUpcoming(i));
     const holiday = shabbatData.items.find(i => i.category === 'holiday' && i.yomtov && isUpcoming(i));
-    const rawTitle = holiday?.hebrew ?? holiday?.title ?? parasha?.hebrew ?? parasha?.title ?? '';
+    const rawTitle =
+      (holiday && (holiday.hebrew || holiday.title)) ||
+      (parasha && (parasha.hebrew || parasha.title)) ||
+      '';
     const title    = rawTitle ? stripHebrewOrdinal(rawTitle) : '';
 
     shabbatTimes = { candleTime, havdalahTime };
@@ -297,7 +309,7 @@ async function loadShabbatTimes() {
         </div>
       `;
     }
-  } catch {
+  } catch (e) {
     el.innerHTML = '<span class="loading">הזמנים אינם זמינים</span>';
   }
 
@@ -343,14 +355,14 @@ async function loadHolidayTimes() {
       `&geonameid=${CONFIG.hebcalGeonameId}&start=${dateToLocalStr(rangeStart)}&end=${dateToLocalStr(rangeEnd)}`;
     const data = await fetchJSON(url);
 
-    const yomtovDays = (data.items ?? [])
+    const yomtovDays = (data.items || [])
       .filter(i => i.category === 'holiday' && i.yomtov)
-      .map(i => ({ date: parseLocalDateStr(i.date), title: i.title, hebrew: i.hebrew ?? i.title }))
+      .map(i => ({ date: parseLocalDateStr(i.date), title: i.title, hebrew: i.hebrew || i.title }))
       .sort((a, b) => a.date - b.date);
 
     // Group consecutive Yom Tov days (e.g. Rosh Hashana I+II) into one chag block.
     // Uses UTC day numbers so DST transitions never break the "consecutive day" check.
-    const utcDayNum = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000);
+    const utcDayNum = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
     const blocks = [];
     for (const day of yomtovDays) {
       const last = blocks[blocks.length - 1];
@@ -370,10 +382,10 @@ async function loadHolidayTimes() {
         fetchJSON(`${zmanimBase}&date=${dateToLocalStr(dayBefore)}`),
         fetchJSON(`${zmanimBase}&date=${dateToLocalStr(block.lastDate)}`),
       ]);
-      const beforeSunset = beforeZ?.times?.sunset;
-      const lastSunset    = lastZ?.times?.sunset;
+      const beforeSunset = beforeZ && beforeZ.times && beforeZ.times.sunset;
+      const lastSunset    = lastZ && lastZ.times && lastZ.times.sunset;
       if (!beforeSunset || !lastSunset) return null;
-      const candleTime = new Date(new Date(beforeSunset).getTime() - 35 * 60_000);
+      const candleTime = new Date(new Date(beforeSunset).getTime() - 35 * 60000);
       return {
         candleTime,
         havdalahTime: endOfHolyDay(lastSunset, block.lastDate),
@@ -384,7 +396,7 @@ async function loadHolidayTimes() {
 
     holidayBlocks = resolved.filter(Boolean);
     checkShabbatMode(); // re-evaluate immediately in case a chag is active right now
-  } catch { /* silent — holiday mode just won't trigger until the next daily refresh */ }
+  } catch (e) { /* silent — holiday mode just won't trigger until the next daily refresh */ }
 
   // Refresh once a day (data covers a 120-day rolling window)
   const now = new Date();
@@ -402,7 +414,7 @@ async function loadNews() {
 async function loadNewsPanel() {
   try {
     renderNewsPanel(await fetchFeed('ynet', CONFIG.newsPanelUrl));
-  } catch {
+  } catch (e) {
     document.getElementById('news-list').innerHTML = '<div class="loading" style="padding:16px">החדשות אינן זמינות</div>';
   }
 }
@@ -410,7 +422,7 @@ async function loadNewsPanel() {
 async function loadNewsTicker() {
   try {
     renderTicker(await fetchFeed('c14', CONFIG.newsTickerUrl));
-  } catch {
+  } catch (e) {
     document.getElementById('ticker-content').textContent = 'החדשות אינן זמינות כרגע';
   }
 }
@@ -421,7 +433,7 @@ async function loadNewsTicker() {
 async function fetchFeed(proxyKey, feedUrl) {
   try {
     return await fetchFeedViaProxy(proxyKey);
-  } catch {
+  } catch (e) {
     return fetchFeedViaRss2json(feedUrl);
   }
 }
@@ -431,36 +443,41 @@ async function fetchFeedViaProxy(key) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const xml = new DOMParser().parseFromString(await res.text(), 'text/xml');
   if (xml.querySelector('parsererror')) throw new Error('XML parse error');
-  const items = Array.from(xml.querySelectorAll('item')).map(el => ({
-    title:   el.querySelector('title')?.textContent?.trim() ?? '',
-    pubDate: el.querySelector('pubDate')?.textContent?.trim() ?? '',
-    image:   extractRSSImage(el),
-  })).filter(i => i.title);
+  const items = Array.from(xml.querySelectorAll('item')).map(el => {
+    const titleEl = el.querySelector('title');
+    const dateEl = el.querySelector('pubDate');
+    return {
+      title:   titleEl && titleEl.textContent ? titleEl.textContent.trim() : '',
+      pubDate: dateEl && dateEl.textContent ? dateEl.textContent.trim() : '',
+      image:   extractRSSImage(el),
+    };
+  }).filter(i => i.title);
   if (!items.length) throw new Error('empty feed');
   return items;
 }
 
 async function fetchFeedViaRss2json(feedUrl) {
   const data = await fetchJSON(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-  if (data.status !== 'ok' || !data.items?.length) throw new Error('bad response');
+  if (data.status !== 'ok' || !data.items || !data.items.length) throw new Error('bad response');
   return data.items.map(i => ({
-    title:   i.title?.trim() ?? '',
-    pubDate: i.pubDate ?? '',
-    image:   i.thumbnail || extractImgFromHtml(i.description ?? ''),
+    title:   i.title ? i.title.trim() : '',
+    pubDate: i.pubDate || '',
+    image:   i.thumbnail || extractImgFromHtml(i.description || ''),
   })).filter(i => i.title);
 }
 
 function extractRSSImage(el) {
   const media = el.getElementsByTagName('media:content')[0];
-  if (media?.getAttribute('url')) return media.getAttribute('url');
+  if (media && media.getAttribute('url')) return media.getAttribute('url');
 
   const enclosure = el.querySelector('enclosure');
-  const encUrl  = enclosure?.getAttribute('url') ?? '';
-  const encType = enclosure?.getAttribute('type') ?? '';
+  const encUrl  = (enclosure && enclosure.getAttribute('url')) || '';
+  const encType = (enclosure && enclosure.getAttribute('type')) || '';
   if (encUrl && (encType.startsWith('image') || /\.(jpe?g|png|webp|gif)/i.test(encUrl))) return encUrl;
 
   // Ynet puts its thumbnail in an <img> inside the description HTML
-  return extractImgFromHtml(el.querySelector('description')?.textContent ?? '');
+  const descEl = el.querySelector('description');
+  return extractImgFromHtml((descEl && descEl.textContent) || '');
 }
 
 function extractImgFromHtml(html) {
@@ -529,7 +546,7 @@ async function loadAnnouncements() {
         ${item.date ? `<div class="announcement-date">${escapeHtml(item.date)}</div>` : ''}
       </div>
     `).join('');
-  } catch {
+  } catch (e) {
     el.innerHTML = '<div class="no-announcements">אין הודעות</div>';
   }
 }
@@ -565,7 +582,7 @@ function startMusic() {
   audio.volume = 0.35;
 
   // Shuffle a copy of the track list
-  const queue = [...MUSIC_TRACKS].sort(() => Math.random() - 0.5);
+  const queue = MUSIC_TRACKS.slice().sort(() => Math.random() - 0.5);
   let idx = 0;
 
   function playNext() {
@@ -604,12 +621,12 @@ function scheduleShabbatMode() {
   // Only register the interval once
   if (_shabbatModeInterval) return;
   checkShabbatMode();
-  _shabbatModeInterval = setInterval(checkShabbatMode, 30_000);
+  _shabbatModeInterval = setInterval(checkShabbatMode, 30000);
 }
 
 function findActiveHoliday(now) {
   return holidayBlocks.find(b =>
-    now >= b.candleTime.getTime() - 30 * 60_000 && now < b.havdalahTime.getTime());
+    now >= b.candleTime.getTime() - 30 * 60000 && now < b.havdalahTime.getTime());
 }
 
 function checkShabbatMode() {
@@ -617,13 +634,19 @@ function checkShabbatMode() {
   const holiday = findActiveHoliday(now);
   const { candleTime, havdalahTime } = shabbatTimes;
   const shabbatActive = !!(candleTime && havdalahTime &&
-    now >= candleTime.getTime() - 30 * 60_000 && now < havdalahTime.getTime());
+    now >= candleTime.getTime() - 30 * 60000 && now < havdalahTime.getTime());
 
   if (holiday) {
-    overlayInfo = { kind: 'holiday', ...holiday };
+    overlayInfo = {
+      kind: 'holiday',
+      candleTime: holiday.candleTime,
+      havdalahTime: holiday.havdalahTime,
+      nameHe: holiday.nameHe,
+      greeting: holiday.greeting,
+    };
     enterShabbatMode();
   } else if (shabbatActive) {
-    overlayInfo = { kind: 'shabbat', candleTime, havdalahTime, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
+    overlayInfo = { kind: 'shabbat', candleTime: candleTime, havdalahTime: havdalahTime, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
     enterShabbatMode();
   } else {
     exitShabbatMode();
@@ -634,7 +657,7 @@ function enterShabbatMode() {
   // Manual console testing (see CLAUDE.md) calls this directly without going
   // through checkShabbatMode(), so fall back to a plain Shabbat overlay.
   if (!overlayInfo) {
-    overlayInfo = { kind: 'shabbat', ...shabbatTimes, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
+    overlayInfo = { kind: 'shabbat', candleTime: shabbatTimes.candleTime, havdalahTime: shabbatTimes.havdalahTime, nameHe: shabbatParasha, greeting: 'שבת שלום ✨' };
   }
   updateShabbatOverlay();
   if (shabbatModeActive) return;
@@ -669,8 +692,8 @@ function updateShabbatOverlay() {
 
 function updateOverlayDate() {
   const el = document.getElementById('shabbat-overlay-date');
-  const heb  = el.dataset.heb  ?? '';
-  const greg = el.dataset.greg ?? '';
+  const heb  = el.dataset.heb  || '';
+  const greg = el.dataset.greg || '';
   el.textContent = [heb, greg].filter(Boolean).join('  ·  ');
 }
 
@@ -684,7 +707,7 @@ async function fetchJSON(url) {
 // Local (not UTC) date <-> 'YYYY-MM-DD' — avoids the UTC-midnight rollover bugs
 // that toISOString()/new Date(string) cause depending on the browser's timezone.
 function dateToLocalStr(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 function parseLocalDateStr(s) {
   const [y, m, d] = s.split('-').map(Number);
@@ -699,15 +722,6 @@ function escapeHtml(str = '') {
     .replace(/"/g, '&quot;');
 }
 
-// ── Scale to fit any screen ────────────────────────────────────────────────────
-function scaleToFit() {
-  const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-  const offsetX = (window.innerWidth  - 1920 * scale) / 2;
-  const offsetY = (window.innerHeight - 1080 * scale) / 2;
-  const app = document.getElementById('app');
-  app.style.transform = `scale(${scale})`;
-  app.style.left = offsetX + 'px';
-  app.style.top  = offsetY + 'px';
-}
-scaleToFit();
-window.addEventListener('resize', scaleToFit);
+// Scaling lives in index.html (plain ES5) so the 1920×1080 canvas still fits
+// when this file fails to parse. Re-measure once this script has loaded.
+if (window.scaleToFit) scaleToFit();
