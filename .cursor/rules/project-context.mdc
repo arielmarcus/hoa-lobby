@@ -14,4 +14,4 @@ Hard rules, in case the reference above isn't loaded:
 - Always pass `timeZone: 'Asia/Jerusalem'` when formatting times.
 - Havdalah/end-of-chag is computed with 8.5° solar trig (`TZEIT_DEPRESSION_DEG` in `app.js`). Do not replace it with a fixed minutes-after-sunset offset or a HebCal field.
 - Music must never play while the Shabbat/Yom Tov overlay is active.
-- `fetchRSS()` in `app.js` is a dead fallback — don't use it for Ynet.
+- News feeds go through rss2json, whose `pubDate` is UTC without a zone marker — parse it as UTC (see `formatPubTime()`).

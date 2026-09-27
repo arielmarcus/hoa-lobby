@@ -437,49 +437,14 @@ async function loadNewsTicker() {
   }
 }
 
-async function fetchRSS(url) {
-  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxy);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  const xml = new DOMParser().parseFromString(text, 'text/xml');
-  if (xml.querySelector('parsererror')) throw new Error('XML parse error');
-  return Array.from(xml.querySelectorAll('item'))
-    .slice(0, 15)
-    .map(el => ({
-      title:   el.querySelector('title')?.textContent?.trim() ?? '',
-      pubDate: el.querySelector('pubDate')?.textContent?.trim() ?? '',
-      image:   extractRSSImage(el),
-    }))
-    .filter(i => i.title);
-}
-
-function extractRSSImage(el) {
-  // media:content (most common)
-  const mediaContent = el.getElementsByTagName('media:content')[0];
-  if (mediaContent?.getAttribute('url')) return mediaContent.getAttribute('url');
-
-  // enclosure tag
-  const enclosure = el.querySelector('enclosure');
-  if (enclosure) {
-    const url  = enclosure.getAttribute('url') ?? '';
-    const type = enclosure.getAttribute('type') ?? '';
-    if (url && (type.startsWith('image') || /\.(jpe?g|png|webp|gif)/i.test(url))) return url;
-  }
-
-  // img tag inside description
-  const desc = el.querySelector('description')?.textContent ?? '';
-  const m = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (m) return m[1];
-
-  return null;
-}
-
 function formatPubTime(pubDateStr) {
   if (!pubDateStr) return '';
-  const d = new Date(pubDateStr);
+  // rss2json returns 'YYYY-MM-DD HH:MM:SS' in UTC with no zone marker; parsing
+  // that as-is treats it as local time and shows headlines 2–3 hours early.
+  const utcMatch = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/.exec(pubDateStr);
+  const d = new Date(utcMatch ? `${utcMatch[1]}T${utcMatch[2]}Z` : pubDateStr);
   if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jerusalem' });
 }
 
 function renderNewsPanel(items) {

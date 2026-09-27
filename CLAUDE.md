@@ -62,7 +62,7 @@ Single-page app: `index.html` (structure) + `style.css` (styles) + `app.js` (all
 
 **Ticker speed** — duration = `Math.max(80, approxChars * 0.18)` seconds. Adjust the `0.18` multiplier to change speed.
 
-**CORS** — both RSS feeds go through `api.rss2json.com` (AllOrigins fails for Ynet). Direct fetch also fails due to CORS from GitHub Pages HTTPS origin. There is a `fetchRSS()` function using AllOrigins that is not currently called — it's a dead fallback; do not use it for Ynet.
+**CORS** — both RSS feeds go through `api.rss2json.com`. Direct fetch fails due to CORS from the GitHub Pages HTTPS origin, and the AllOrigins proxy fails for Ynet (an unused AllOrigins fallback was removed — don't reintroduce it). rss2json returns `pubDate` as `YYYY-MM-DD HH:MM:SS` in **UTC with no zone marker**; `formatPubTime()` parses it as UTC and displays in `Asia/Jerusalem`. The free tier also serves a cached copy of each feed that can lag the source by hours.
 
 ## Android TV / Fully Kiosk Browser compatibility
 
